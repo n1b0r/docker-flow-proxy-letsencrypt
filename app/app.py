@@ -26,7 +26,7 @@ def run(cmd):
     output, error = process.communicate()
     logger.debug("o {}".format(output))
     if error:
-	    logger.debug(error)
+        logger.debug(error)
     logger.debug("r: {}".format(process.returncode))
     
     return output, error, process.returncode
@@ -51,38 +51,38 @@ def update_cert(domains, email):
                     options=CERTBOT_OPTIONS))
 
     if b'urn:acme:error:unauthorized' in error:
-    	logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
+        logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
 
 
     if error:
-    	return False
+        return False
 
     return True
 def is_letsencrypt_service(args):
-	""" Check if given service has special args """
+    """ Check if given service has special args """
 
-	found = True
-	for label in ('letsencrypt.host', 'letsencrypt.email'):
-		if label in args.keys():
-			logger.debug('argument {} found : {}'.format(label, args.get(label)))
-		else:
-			found = False
-			logger.debug('argument {} NOT found.'.format(label))
+    found = True
+    for label in ('letsencrypt.host', 'letsencrypt.email'):
+        if label in args.keys():
+            logger.debug('argument {} found : {}'.format(label, args.get(label)))
+        else:
+            found = False
+            logger.debug('argument {} NOT found.'.format(label))
 
-	return found
+    return found
 
 def forward_request_to_proxy(args):
-	# transmit the request to docker-flow-proxy
-	url = '{}?{}'.format(
-		DF_NOTIFY_CREATE_SERVICE_URL,
-		'&'.join(['{}={}'.format(k, v) for k, v in args.items()]))
-	logger.debug('forwarding request to url {}'.format(url))
-	try:
-		response = requests.get(url)
-		logger.debug('response: {} {}'.format(
-			response.status_code, response.text))
-	except requests.exceptions.ConnectionError:
-		logger.error('invalid domain name.')
+    # transmit the request to docker-flow-proxy
+    url = '{}?{}'.format(
+        DF_NOTIFY_CREATE_SERVICE_URL,
+        '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))
+    logger.debug('forwarding request to url {}'.format(url))
+    try:
+        response = requests.get(url)
+        logger.debug('response: {} {}'.format(
+            response.status_code, response.text))
+    except requests.exceptions.ConnectionError:
+        logger.error('invalid domain name.')
 
 
 
@@ -95,15 +95,15 @@ def acme_challenge(path):
 
 @app.route("/v1/docker-flow-proxy-letsencrypt/reconfigure")
 def update():
-	args = request.args
-	logger.info('request for service: {}'.format(args.get('serviceName')))
-	if is_letsencrypt_service(args):
-		logger.info('letencrypt service detected.')
-		if update_cert(args.get('letsencrypt.host'), args.get('letsencrypt.email')):
-			logger.info('certificates successfully generated using certbot.')
+    args = request.args
+    logger.info('request for service: {}'.format(args.get('serviceName')))
+    if is_letsencrypt_service(args):
+        logger.info('letencrypt service detected.')
+        if update_cert(args.get('letsencrypt.host'), args.get('letsencrypt.email')):
+            logger.info('certificates successfully generated using certbot.')
 
-			# 
-			combined_path = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
+            # 
+            combined_path = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
             # create combined cert.
             with open(combined_path, "w") as combined, \
                  open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "privkey.pem"), "r") as priv, \
@@ -113,8 +113,8 @@ def update():
                 combined.write(priv.read())
                 logger.info('combined certificate generated into "{}".'.format(combined_path))
 
-	forward_request_to_proxy(args)
-	return "OK {}".format(request.args)
+    forward_request_to_proxy(args)
+    return "OK {}".format(request.args)
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080, debug=True)
