@@ -74,7 +74,7 @@ def update_cert(domains, email):
     if b'urn:acme:error:unauthorized' in error:
         logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
 
-    if error or 'no action taken.' in output:
+    if error or b'no action taken.' in output:
         return False
 
     return True
