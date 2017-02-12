@@ -91,7 +91,9 @@ app = Flask(__name__)
 
 @app.route("/.well-known/acme-challenge/<path>")
 def acme_challenge(path):
-    return send_from_directory(os.path.join([CERTBOT_WEBROOT_PATH, ".well-known/acme-challenge/{}".format(path)]))
+    return send_from_directory(os.path.join(
+        CERTBOT_WEBROOT_PATH,
+        ".well-known/acme-challenge/{}".format(path)))
 
 @app.route("/v1/docker-flow-proxy-letsencrypt/reconfigure")
 def update():
