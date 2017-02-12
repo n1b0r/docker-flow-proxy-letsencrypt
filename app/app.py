@@ -83,7 +83,7 @@ def forward_request_to_proxy(args):
         response = requests.get(url)
         logger.debug('response: {} {}'.format(
             response.status_code, response.text))
-    except requests.exceptions.ConnectionError e:
+    except requests.exceptions.ConnectionError as e:
         logger.error('invalid domain name.')
         raise e
 
