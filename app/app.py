@@ -23,15 +23,14 @@ CERTBOT_LIVE_FOLDER = "/etc/letsencrypt/live/"
 import requests
 class DockerFlowProxyAPIClient:
     def __init__(self, base_url):
-        self.base_url
+        self.base_url = base_url
 
+    def url(self, url):
+        return self.base_url + url
     def _request(self, method_name, *args, **kwargs):
         return getattr(requests, method_name)(*args, **kwargs)
     def put(self, *args, **kwargs):
         return self._request('put', *args, **kwargs)
-
-    def url(self, url):
-        return self.base_url + url
 
     def put_cert(file):
         response = self.put(
