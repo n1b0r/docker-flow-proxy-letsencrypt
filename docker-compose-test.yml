@@ -9,7 +9,7 @@ services:
       labels:
         - com.df.notify=true
         - com.df.distribute=true
-        - com.df.serviceDomain=https://git.nibor.me
+        - com.df.serviceDomain=git.nibor.me
         - com.df.letsencrypt.host=git.nibor.me
         - com.df.letsencrypt.email=robinlucbernet@gmail.com
         - com.df.servicePath=/
