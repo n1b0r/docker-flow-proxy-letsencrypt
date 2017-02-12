@@ -77,7 +77,7 @@ def forward_request_to_proxy(args):
     # transmit the request to docker-flow-proxy
     url = '{}?{}'.format(
         DF_NOTIFY_CREATE_SERVICE_URL,
-        '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))
+        '&'.join(['{}={}'.format(k, v) for k, v in args.igit putems()]))
     logger.debug('forwarding request to url {}'.format(url))
     try:
         response = requests.get(url)
@@ -102,7 +102,11 @@ def update():
     logger.info('request for service: {}'.format(args.get('serviceName')))
     if is_letsencrypt_service(args):
         logger.info('letencrypt service detected.')
-        if update_cert(args.get('letsencrypt.host'), args.get('letsencrypt.email')):
+
+        domain = args.get('letsencrypt.host')
+        email = args.get('letsencrypt.email')
+        
+        if update_cert(domain, email):
             logger.info('certificates successfully generated using certbot.')
 
             # 
