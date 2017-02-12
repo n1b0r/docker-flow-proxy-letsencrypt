@@ -27,14 +27,17 @@ class DockerFlowProxyAPIClient:
 
     def url(self, url):
         return self.base_url + url
-    def _request(self, method_name, *args, **kwargs):
-        return getattr(requests, method_name)(*args, **kwargs)
+    def _request(self, method_name, url, **kwargs):
+        logger.debug('[{}] {}'.format(method_name, url))
+        r = getattr(requests, method_name)(*args, **kwargs)
+        logger.debug('     {}: {}'.format(r.status_code, r.text))
+        return r 
     def put(self, *args, **kwargs):
         return self._request('put', *args, **kwargs)
 
     def put_cert(self, file):
         response = self.put(
-            self.url('/cert&certName={}&distribute=true'.format(os.path.basename(file))),
+            self.url('/cert?certName={}&distribute=true'.format(os.path.basename(file))),
             data=open(file, 'rb').read(),
             headers={'Content-Type': 'application/octet-stream'})
 
