@@ -17,7 +17,9 @@ logger = logging.getLogger('letsencrypt')
 DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
 CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
 CERTBOT_OPTIONS = os.environ.get('CERTBOT_OPTIONS', '')
-CERTBIT_LIVE_FOLDER = "/etc/letsencrypt/live/"
+CERTBOT_LIVE_FOLDER = "/etc/letsencrypt/live/"
+
+
 def run(cmd):
     logger.debug('executing cmd : {}'.format(cmd.split()))
     process = subprocess.Popen(cmd.split(),
@@ -81,9 +83,9 @@ def forward_request_to_proxy(args):
         response = requests.get(url)
         logger.debug('response: {} {}'.format(
             response.status_code, response.text))
-    except requests.exceptions.ConnectionError:
+    except requests.exceptions.ConnectionError e:
         logger.error('invalid domain name.')
-
+        raise e
 
 
 
