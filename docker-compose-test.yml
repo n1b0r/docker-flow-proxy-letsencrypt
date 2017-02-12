@@ -13,6 +13,7 @@ services:
         - com.df.letsencrypt.host=git.nibor.me
         - com.df.letsencrypt.email=robinlucbernet@gmail.com
         - com.df.servicePath=/
+        - com.df.srcPort=443
         - com.df.port=8000
 networks:
   proxy:
