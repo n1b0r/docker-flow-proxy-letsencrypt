@@ -32,7 +32,7 @@ class DockerFlowProxyAPIClient:
     def put(self, *args, **kwargs):
         return self._request('put', *args, **kwargs)
 
-    def put_cert(file):
+    def put_cert(self, file):
         response = self.put(
             self.url('/v1/docker-flow-proxy/cert&certName={}&distribute=true'.format(os.path.basename(file))),
             data=open(file, 'rb').read(),
