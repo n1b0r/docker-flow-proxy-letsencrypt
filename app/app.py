@@ -17,7 +17,7 @@ logger = logging.getLogger('letsencrypt')
 DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
 CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
 CERTBOT_OPTIONS = os.environ.get('CERTBOT_OPTIONS', '')
-
+CERTBIT_LIVE_FOLDER = "/etc/letsencrypt/live/"
 def run(cmd):
     logger.debug('executing cmd : {}'.format(cmd.split()))
     process = subprocess.Popen(cmd.split(),
@@ -53,6 +53,11 @@ def update_cert(domains, email):
     if b'urn:acme:error:unauthorized' in error:
     	logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
 
+
+    if error:
+    	return False
+
+    return True
 def is_letsencrypt_service(args):
 	""" Check if given service has special args """
 
@@ -94,8 +99,19 @@ def update():
 	logger.info('request for service: {}'.format(args.get('serviceName')))
 	if is_letsencrypt_service(args):
 		logger.info('letencrypt service detected.')
-		update_cert(
-			args.get('letsencrypt.host'), args.get('letsencrypt.email'))
+		if update_cert(args.get('letsencrypt.host'), args.get('letsencrypt.email')):
+			logger.info('certificates successfully generated using certbot.')
+
+			# 
+			combined_path = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
+            # create combined cert.
+            with open(combined_path, "w") as combined, \
+                 open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "privkey.pem"), "r") as priv, \
+                 open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "fullchain.pem"), "r") as fullchain:
+
+                combined.write(fullchain.read())
+                combined.write(priv.read())
+                logger.info('combined certificate generated into "{}".'.format(combined_path))
 
 	forward_request_to_proxy(args)
 	return "OK {}".format(request.args)
