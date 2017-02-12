@@ -11,6 +11,7 @@ services:
     environment:
       - LISTENER_ADDRESS=swarm-listener
       - MODE=swarm
+      - SERVICE_NAME=proxy_proxy
     deploy:
       replicas: 1
   swarm-listener:
@@ -21,7 +22,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DF_NOTIFY_CREATE_SERVICE_URL=http://proxy-le:8080/v1/docker-flow-proxy-letsencrypt/reconfigure
-      - DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy:8080/v1/docker-flow-proxy/remove
+      - DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy_proxy:8080/v1/docker-flow-proxy/remove
     deploy:
       placement:
         constraints: [node.role == manager]
@@ -30,7 +31,7 @@ services:
     networks:
       - proxy
     environment:
-      - DF_NOTIFY_CREATE_SERVICE_URL=http://proxy:8080/v1/docker-flow-proxy/reconfigure
+      - DF_NOTIFY_CREATE_SERVICE_URL=http://proxy_proxy:8080/v1/docker-flow-proxy/reconfigure
       - CERTBOT_OPTIONS=--staging
     deploy:
       replicas: 1
@@ -39,20 +40,6 @@ services:
         - com.df.distribute=true
         - com.df.servicePath=/.well-known/acme-challenge
         - com.df.port=8080
-  whoami:
-    image: jwilder/whoami
-    networks:
-      - proxy
-    deploy:
-      replicas: 1
-      labels:
-        - com.df.notify=true
-        - com.df.distribute=true
-        - com.df.serviceDomain=https://git.nibor.me
-        - com.df.letsencrypt.host=git.nibor.me
-        - com.df.letsencrypt.email=robinlucbernet@gmail.com
-        - com.df.servicePath=/
-        - com.df.port=8000
 networks:
   proxy:
     external: true
