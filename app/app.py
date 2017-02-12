@@ -29,7 +29,7 @@ class DockerFlowProxyAPIClient:
         return self.base_url + url
     def _request(self, method_name, url, **kwargs):
         logger.debug('[{}] {}'.format(method_name, url))
-        r = getattr(requests, method_name)(*args, **kwargs)
+        r = getattr(requests, method_name)(url, **kwargs)
         logger.debug('     {}: {}'.format(r.status_code, r.text))
         return r 
     def put(self, *args, **kwargs):
