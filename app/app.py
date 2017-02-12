@@ -15,10 +15,29 @@ logging.basicConfig(level=LEVELS.get(os.environ.get('LOG', 'debug').lower()))
 logger = logging.getLogger('letsencrypt')
 
 DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
+DF_PROXY_SERVICE_BASE_URL = os.environ.get('DF_PROXY_SERVICE_BASE_URL')
 CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
 CERTBOT_OPTIONS = os.environ.get('CERTBOT_OPTIONS', '')
 CERTBOT_LIVE_FOLDER = "/etc/letsencrypt/live/"
 
+import requests
+class DockerFlowProxyAPIClient:
+    def __init__(self, base_url):
+        self.base_url
+
+    def _request(self, method_name, *args, **kwargs):
+        return getattr(requests, method_name)(*args, **kwargs)
+    def put(self, *args, **kwargs):
+        return self._request('put', *args, **kwargs)
+
+    def url(self, url):
+        return self.base_url + url
+
+    def put_cert(file):
+        response = self.put(
+            self.url('/v1/docker-flow-proxy/cert&certName={}&distribute=true'.format(os.path.basename(file)))
+            data=open(file, 'rb').read(),
+            headers={'Content-Type': 'application/octet-stream'})
 
 def run(cmd):
     logger.debug('executing cmd : {}'.format(cmd.split()))
@@ -55,8 +74,7 @@ def update_cert(domains, email):
     if b'urn:acme:error:unauthorized' in error:
         logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
 
-
-    if error:
+    if error or 'no action taken.' in output:
         return False
 
     return True
@@ -119,6 +137,9 @@ def update():
                 combined.write(fullchain.read())
                 combined.write(priv.read())
                 logger.info('combined certificate generated into "{}".'.format(combined_path))
+
+            client = DockerFlowProxyAPIClient(DF_PROXY_SERVICE_BASE_URL)
+            client.put_cert(combined_path)
 
     forward_request_to_proxy(args)
     return "OK {}".format(request.args)
