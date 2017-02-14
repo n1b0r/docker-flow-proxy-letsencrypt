@@ -13,6 +13,7 @@ test:
     - docker build -t robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME} .
     # run test
     - rm -rf /tmp/${CI_BUILD_REF_NAME}/docker-compose.yml
+    - mkdir -p /tmp/${CI_BUILD_REF_NAME}
     - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_NAME}/docker-compose.yml
     - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_NAME}/docker-compose-service.yml
     - docker network create -d overlay test-${CI_BUILD_REF_NAME}
