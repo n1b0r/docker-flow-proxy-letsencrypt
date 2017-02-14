@@ -3,7 +3,7 @@ services:
   whoami:
     image: jwilder/whoami
     networks:
-      - proxy
+      - test-network-dfple
     deploy:
       replicas: 1
       labels:
@@ -16,5 +16,5 @@ services:
         - com.df.srcPort=443
         - com.df.port=8000
 networks:
-  proxy:
+  test-network-dfple:
     external: true

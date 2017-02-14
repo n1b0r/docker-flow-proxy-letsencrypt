@@ -6,7 +6,7 @@ services:
       - 80:80
       - 443:443
     networks:
-      - test-${CI_BUILD_REF_NAME}
+      - test-network-dfple
     environment:
       - LISTENER_ADDRESS=swarm-listener
       - MODE=swarm
@@ -16,7 +16,7 @@ services:
   swarm-listener:
     image: vfarcic/docker-flow-swarm-listener
     networks:
-      - test-${CI_BUILD_REF_NAME}
+      - test-network-dfple
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
@@ -28,7 +28,7 @@ services:
   proxy-le:
     image: robin/docker-flow-proxy-letsencrypt
     networks:
-      - test-${CI_BUILD_REF_NAME}
+      - test-network-dfple
     environment:
       - DF_PROXY_SERVICE_NAME=proxy-${CI_BUILD_REF_NAME}_proxy
       #- CERTBOT_OPTIONS=--staging
@@ -40,5 +40,5 @@ services:
         - com.df.servicePath=/.well-known/acme-challenge
         - com.df.port=8080
 networks:
-  test-${CI_BUILD_REF_NAME}:
+  test-network-dfple:
     external: true
