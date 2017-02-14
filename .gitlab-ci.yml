@@ -12,11 +12,12 @@ test:
     # build image 
     - docker build -t robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME} .
     # run test
+    - docker network rm -f test-${CI_BUILD_REF_NAME}
+    - docker network create -d overlay test-${CI_BUILD_REF_NAME}
     - rm -rf /tmp/${CI_BUILD_REF_NAME}/docker-compose.yml
     - mkdir -p /tmp/${CI_BUILD_REF_NAME}
     - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_NAME}/docker-compose.yml
     - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_NAME}/docker-compose-service.yml
-    - docker network create -d overlay test-${CI_BUILD_REF_NAME}
     - cd /tmp/${CI_BUILD_REF_NAME}
     - docker stack deploy -c docker-compose.yml proxy-${CI_BUILD_REF_NAME}
     - sleep 10
