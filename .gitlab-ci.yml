@@ -1,5 +1,5 @@
 image: docker:git
-service:
+services:
   - docker:dind
 
 stages:
