@@ -6,31 +6,31 @@ services:
       - 80:80
       - 443:443
     networks:
-      - proxy
+      - test-${CI_BUILD_REF_NAME}
     environment:
       - LISTENER_ADDRESS=swarm-listener
       - MODE=swarm
-      - SERVICE_NAME=proxy_proxy
+      - SERVICE_NAME=proxy-${CI_BUILD_REF_NAME}_proxy
     deploy:
       replicas: 1
   swarm-listener:
     image: vfarcic/docker-flow-swarm-listener
     networks:
-      - proxy
+      - test-${CI_BUILD_REF_NAME}
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DF_NOTIFY_CREATE_SERVICE_URL=http://proxy-le:8080/v1/docker-flow-proxy-letsencrypt/reconfigure
-      - DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy_proxy:8080/v1/docker-flow-proxy/remove
+      - DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy-${CI_BUILD_REF_NAME}_proxy:8080/v1/docker-flow-proxy/remove
     deploy:
       placement:
         constraints: [node.role == manager]
   proxy-le:
     image: robin/docker-flow-proxy-letsencrypt
     networks:
-      - proxy
+      - test-${CI_BUILD_REF_NAME}
     environment:
-      - DF_PROXY_SERVICE_NAME=proxy_proxy
+      - DF_PROXY_SERVICE_NAME=proxy-${CI_BUILD_REF_NAME}_proxy
       #- CERTBOT_OPTIONS=--staging
     deploy:
       replicas: 1
@@ -40,5 +40,5 @@ services:
         - com.df.servicePath=/.well-known/acme-challenge
         - com.df.port=8080
 networks:
-  proxy:
+  test-${CI_BUILD_REF_NAME}:
     external: true
