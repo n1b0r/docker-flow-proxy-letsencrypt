@@ -84,12 +84,12 @@ services:
       labels:
         - com.df.notify=true
         - com.df.distribute=true
-        - com.df.serviceDomain=git.nibor.me
+        - com.df.serviceDomain=domain.com
         - com.df.servicePath=/
         - com.df.srcPort=443
         - com.df.port=8000
-        - com.df.letsencrypt.host=git.nibor.me
-        - com.df.letsencrypt.email=robinlucbernet@gmail.com
+        - com.df.letsencrypt.host=domain.com
+        - com.df.letsencrypt.email=email@domain.com
 networks:
   proxy:
     external: true

@@ -3,8 +3,8 @@ services:
   proxy:
     image: vfarcic/docker-flow-proxy
     ports:
-      - 10080:80
-      - 10443:443
+      - 80:80
+      - 443:443
     networks:
       - proxy
     environment:
