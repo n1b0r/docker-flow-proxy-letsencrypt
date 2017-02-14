@@ -31,6 +31,10 @@ test:
     - docker push robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
   tags:
     - ks2.nibor.me
+  only:
+    - develop
+    - master
+
 
 release:
   stage: release

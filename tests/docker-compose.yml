@@ -31,7 +31,7 @@ services:
       - proxy
     environment:
       - DF_PROXY_SERVICE_NAME=proxy_proxy
-      - CERTBOT_OPTIONS=--staging
+      #- CERTBOT_OPTIONS=--staging
     deploy:
       replicas: 1
       labels:
