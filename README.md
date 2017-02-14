@@ -1,4 +1,99 @@
-# docker-flow-proxy letsencrypt support proposal 
+# docker-flow-proxy letsencrypt 
+
+`docker-flow-proxy-letsencrypt` is a `docker-flow-proxy` companion that automatically create and renew certificates for your services.
+
+You need to set deployment labels to enable let's encrypt support for each proxied services:
+  * com.df.letsencrypt.host
+  * com.df.letsencrypt.email
+
+**com.df.letsencrypt.host** generally match the **com.df.serviceDomain** label.
+
+## Usage.
+
+Create the `proxy` network.
+
+```
+docker network create -d overlay proxy
+```
+
+### proxy stack
+
+```
+version: "3"
+services:
+  proxy:
+    image: vfarcic/docker-flow-proxy
+    ports:
+      - 80:80
+      - 443:443
+    networks:
+      - proxy
+    environment:
+      - LISTENER_ADDRESS=swarm-listener
+      - MODE=swarm
+    deploy:
+      replicas: 1
+  swarm-listener:
+    image: vfarcic/docker-flow-swarm-listener
+    networks:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DF_NOTIFY_CREATE_SERVICE_URL=http://proxy-le:8080/v1/docker-flow-proxy-letsencrypt/reconfigure
+      - DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy_proxy:8080/v1/docker-flow-proxy/remove
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+  proxy-le:
+    image: robin/docker-flow-proxy-letsencrypt
+    networks:
+      - proxy
+    environment:
+      - DF_PROXY_SERVICE_NAME=proxy
+    deploy:
+      replicas: 1
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.servicePath=/.well-known/acme-challenge
+        - com.df.port=8080
+networks:
+  proxy:
+    external: true
+
+```
+
+Environment variables :
+  * `DF_PROXY_SERVICE_NAME`: `docker-flow-proxy` service name (either SERVICE-NAME or STACK-NAME_SERVICE-NAME).
+  * `CERTBOT_OPTIONS`: custom options added to certbot command line (example: --staging).
+  * `LOG`: logging level (debug, info, warning, error), defaults to info.
+
+
+### service stack
+
+```
+version: "3"
+services:
+  whoami:
+    image: jwilder/whoami
+    networks:
+      - proxy
+    deploy:
+      replicas: 1
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=git.nibor.me
+        - com.df.servicePath=/
+        - com.df.srcPort=443
+        - com.df.port=8000
+        - com.df.letsencrypt.host=git.nibor.me
+        - com.df.letsencrypt.email=robinlucbernet@gmail.com
+networks:
+  proxy:
+    external: true
+```
 
 ## The actual design
 
@@ -16,26 +111,12 @@ The current design is pretty easy, `docker-flow-swarm-listener` sends all **RECO
 
 ## Improved design
 
-The current design is plug-and-play, but if a user do not need letsencrypt support we force him to go throught `docker-flow-proxy-letsencrypt` because all request are send to it.
-
 We should provide a new env var for `docker-flow-swarm-listener` to be able to send a request to `docker-flow-proxy-letsencrypt`. Let say, `DF_NOTIFY_LETSENCRYPT_SERVICE_URL`.
 
 `docker-flow-swarm-listener` could detected new services with letsencrypt support based on labels `com.df.letsencrypt.host`, `com.df.letsencrypt.email`. And then send a request to `docker-flow-swarm-listener` or `docker-flow-proxy`.
 
-Should the `docker-flow-proxy` be also contacted by `docker-flow-swarm-listener` if letsencrypt labels are found ?
-
-In my opinion, this is useless. If we do it, we are going to reload the haproxy two times instead of one (one by the `docker-flow-swarm-listener` and one by the `docker-flow-proxy-letsencrypt` after cert generation).
-
-If we delegate the request to `docker-flow-proxy-letsencrypt`, we trust him to make the whole process happening. 
-
-The purposed design work out of the box, no changes needed on `docker-flow-proxy-letsencrypt`.
-
-
-	swarm-listner 
-				| (if LE labels found) >> proxy-le >> proxy
-				| (if no LE labels found) >> proxy
+`docker-flow-proxy-letsencrypt` should trigger only one request to perform reconfigure and certificate update (PUT request with certifcate as data ?)
 
 ## Things to do
 
-  * make the code more robust (correctly handle errors)
   * renewal process based on cron (we night need that `docker-flow-swarm-listener` gives us the list of services).

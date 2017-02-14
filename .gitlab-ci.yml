@@ -1,0 +1,39 @@
+image: docker:git
+service:
+  - docker:dind
+
+stages:
+  - test
+  - release
+
+test:
+  stage: test
+  script:
+    # build image 
+    - docker build -t robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME} .
+    # run test
+    - rm -rf /tmp/${CI_BUILD_REF_NAME}/docker-compose.yml
+    - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_NAME}/docker-compose.yml
+    - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_NAME}/docker-compose-service.yml
+    - docker network create -d overlay test-${CI_BUILD_REF_NAME}
+    - cd /tmp/${CI_BUILD_REF_NAME}
+    - docker stack deploy -c docker-compose.yml proxy-${CI_BUILD_REF_NAME}
+    - sleep 10
+    - docker stack deploy -c docker-compose-service.yml service-${CI_BUILD_REF_NAME}
+    - sleep 60
+    - curl https://${CI_BUILD_REF_NAME}.ks2.nibor.me
+    - docker push robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
+  tags:
+    - ks2.nibor.me
+
+release:
+  stage: release
+  script:
+    - docker pull robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
+    - docker tag robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME} robin/docker-flow-proxy-letsencrypt:latest
+    - docker push robin/docker-flow-proxy-letsencrypt:latest
+  tags:
+    - ks2.nibor.me
+  only:
+    - master
+

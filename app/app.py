@@ -11,7 +11,7 @@ LEVELS = {'debug': logging.DEBUG,
           'error': logging.ERROR,
           'critical': logging.CRITICAL}
 
-logging.basicConfig(level=LEVELS.get(os.environ.get('LOG', 'debug').lower()))
+logging.basicConfig(level=LEVELS.get(os.environ.get('LOG', 'info').lower()))
 logger = logging.getLogger('letsencrypt')
 
 DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
@@ -20,68 +20,76 @@ CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
 CERTBOT_OPTIONS = os.environ.get('CERTBOT_OPTIONS', '')
 CERTBOT_LIVE_FOLDER = "/etc/letsencrypt/live/"
 
-import requests
 class DockerFlowProxyAPIClient:
-    def __init__(self, base_url):
-        self.base_url = base_url
+    def __init__(self, DF_PROXY_SERVICE_BASE_URL=None, adaptor=None):
+        self.base_url = DF_PROXY_SERVICE_BASE_URL
+        if self.base_url is None:
+            self.base_url = os.environ.get('DF_PROXY_SERVICE_NAME')
 
-    def url(self, url):
-        return self.base_url + url
+        self.adaptor = adaptor
+        if self.adaptor is None:
+            self.adaptor = requests
+
+    def url(self, verion, url):
+        return self.base_url + '/v{}/docker-flow-proxy'.format(version) + url
+
     def _request(self, method_name, url, **kwargs):
         logger.debug('[{}] {}'.format(method_name, url))
-        r = getattr(requests, method_name)(url, **kwargs)
+        r = getattr(self.adaptor, method_name)(url, **kwargs)
         logger.debug('     {}: {}'.format(r.status_code, r.text))
         return r 
     def put(self, *args, **kwargs):
         return self._request('put', *args, **kwargs)
+    def get(self, *args, **kwargs):
+        return self._request('put', *args, **kwargs)
 
-    def put_cert(self, file):
-        response = self.put(
-            self.url('/cert?certName={}&distribute=true'.format(os.path.basename(file))),
-            data=open(file, 'rb').read(),
-            headers={'Content-Type': 'application/octet-stream'})
 
-def run(cmd):
-    logger.debug('executing cmd : {}'.format(cmd.split()))
-    process = subprocess.Popen(cmd.split(),
-                               stdout=subprocess.PIPE, 
-                               stderr=subprocess.PIPE)
-    output, error = process.communicate()
-    logger.debug("o {}".format(output))
-    if error:
-        logger.debug(error)
-    logger.debug("r: {}".format(process.returncode))
-    
-    return output, error, process.returncode
+class CertbotClient():
+    def __init__(self):
+        pass
 
-def update_cert(domains, email):
-    """
-    Update certifacts
-    """
-    output, error, code = run("""certbot certonly \
-                --agree-tos \
-                --domains {domains} \
-                --email {email} \
-                --expand \
-                --noninteractive \
-                --webroot \
-                --webroot-path {webroot_path} \
-                --debug \
-                {options}""".format(
-                    domains=domains,
-                    email=email,
-                    webroot_path=CERTBOT_WEBROOT_PATH,
-                    options=CERTBOT_OPTIONS))
+    def run(cmd):
+        logger.debug('executing cmd : {}'.format(cmd.split()))
+        process = subprocess.Popen(cmd.split(),
+                                   stdout=subprocess.PIPE, 
+                                   stderr=subprocess.PIPE)
+        output, error = process.communicate()
+        logger.debug("o {}".format(output))
+        if error:
+            logger.debug(error)
+        logger.debug("r: {}".format(process.returncode))
+        
+        return output, error, process.returncode
 
-    if b'urn:acme:error:unauthorized' in error:
-        logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
+    def update_cert(domains, email):
+        """
+        Update certifacts
+        """
+        output, error, code = run("""certbot certonly \
+                    --agree-tos \
+                    --domains {domains} \
+                    --email {email} \
+                    --expand \
+                    --noninteractive \
+                    --webroot \
+                    --webroot-path {webroot_path} \
+                    --debug \
+                    {options}""".format(
+                        domains=domains,
+                        email=email,
+                        webroot_path=CERTBOT_WEBROOT_PATH,
+                        options=CERTBOT_OPTIONS))
 
-    if error or b'no action taken.' in output:
-        return False
+        if b'urn:acme:error:unauthorized' in error:
+            logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
 
-    return True
+        if error or b'no action taken.' in output:
+            return False
+
+        return True
+
 def is_letsencrypt_service(args):
-    """ Check if given service has special args """
+    """ Check if given service has special letsencrypt labels """
 
     found = True
     for label in ('letsencrypt.host', 'letsencrypt.email'):
@@ -93,21 +101,6 @@ def is_letsencrypt_service(args):
 
     return found
 
-def forward_request_to_proxy(args):
-    # transmit the request to docker-flow-proxy
-    url = '{}?{}'.format(
-        DF_NOTIFY_CREATE_SERVICE_URL,
-        '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))
-    logger.debug('forwarding request to url {}'.format(url))
-    try:
-        response = requests.get(url)
-        logger.debug('response: {} {}'.format(
-            response.status_code, response.text))
-    except requests.exceptions.ConnectionError as e:
-        logger.error('invalid domain name.')
-        raise e
-
-
 
 app = Flask(__name__)
 
@@ -116,20 +109,22 @@ def acme_challenge(path):
     return send_from_directory(CERTBOT_WEBROOT_PATH,
         ".well-known/acme-challenge/{}".format(path))
 
-@app.route("/v1/docker-flow-proxy-letsencrypt/reconfigure")
+@app.route("/v<int:version>/docker-flow-proxy-letsencrypt/reconfigure")
 def update():
     args = request.args
     logger.info('request for service: {}'.format(args.get('serviceName')))
     if is_letsencrypt_service(args):
         logger.info('letencrypt service detected.')
 
+        client = DockerFlowProxyAPIClient(DF_PROXY_SERVICE_BASE_URL)
+
         domain = args.get('letsencrypt.host')
         email = args.get('letsencrypt.email')
+        cert = None
 
         if update_cert(domain, email):
             logger.info('certificates successfully generated using certbot.')
 
-            # 
             combined_path = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
             # create combined cert.
             with open(combined_path, "w") as combined, \
@@ -140,10 +135,31 @@ def update():
                 combined.write(priv.read())
                 logger.info('combined certificate generated into "{}".'.format(combined_path))
 
-            client = DockerFlowProxyAPIClient(DF_PROXY_SERVICE_BASE_URL)
-            client.put_cert(combined_path)
+            cert = combined_path
 
-    forward_request_to_proxy(args)
+            if version == 1:
+                client.put(
+                    self.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
+                    data=open(file, 'rb').read(),
+                    headers={'Content-Type': 'application/octet-stream'})
+    
+    if version == 1:
+        client.get(self.url(version, '/reconfigure?{}'.format(
+            '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
+    else:
+        # version > 2 should provide certificate in the PUT request that
+        # reconfigure the proxy.
+
+        if cert:
+            client.put(self.url(version, '/reconfigure?{}'.format(
+                '&'.join(['{}={}'.format(k, v) for k, v in args.items()] + ['certName={}'.format(os.path.basename(cert))]))),
+                data=open(file, 'rb').read(),
+                headers={'Content-Type': 'application/octet-stream'})
+        else:
+            client.get(self.url(version, '/reconfigure?{}'.format(
+                '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
+
+
     return "OK {}".format(request.args)
 
 if __name__ == "__main__":
