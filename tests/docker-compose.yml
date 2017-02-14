@@ -31,7 +31,7 @@ services:
       - test-network-dfple
     environment:
       - DF_PROXY_SERVICE_NAME=proxy-${CI_BUILD_REF_NAME}_proxy
-      #- CERTBOT_OPTIONS=--staging
+      - CERTBOT_OPTIONS=--staging
     deploy:
       replicas: 1
       labels:
