@@ -26,7 +26,7 @@ test:
     # clean
     - docker stack rm service-${CI_BUILD_REF_NAME}
     - docker stack rm proxy-${CI_BUILD_REF_NAME}
-    - docker network rm -f test-network-dfple
+    - docker network rm test-network-dfple
     # publish
     - docker push robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
   tags:
