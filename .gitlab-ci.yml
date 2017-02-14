@@ -22,7 +22,7 @@ test:
     - sleep 10
     - docker stack deploy -c docker-compose-service.yml service-${CI_BUILD_REF_NAME}
     - sleep 30
-    - curl -k "https://${CI_BUILD_REF_NAME}.ks2.nibor.me")
+    - curl -k "https://${CI_BUILD_REF_NAME}.ks2.nibor.me"
     # clean
     - docker stack rm service-${CI_BUILD_REF_NAME}
     - docker stack rm proxy-${CI_BUILD_REF_NAME}
