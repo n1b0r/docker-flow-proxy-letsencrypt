@@ -110,7 +110,7 @@ def acme_challenge(path):
         ".well-known/acme-challenge/{}".format(path))
 
 @app.route("/v<int:version>/docker-flow-proxy-letsencrypt/reconfigure")
-def update():
+def update(version):
     args = request.args
     logger.info('request for service: {}'.format(args.get('serviceName')))
     if is_letsencrypt_service(args):
