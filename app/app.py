@@ -30,7 +30,7 @@ class DockerFlowProxyAPIClient:
         if self.adaptor is None:
             self.adaptor = requests
 
-    def url(self, verion, url):
+    def url(self, version, url):
         return self.base_url + '/v{}/docker-flow-proxy'.format(version) + url
 
     def _request(self, method_name, url, **kwargs):
