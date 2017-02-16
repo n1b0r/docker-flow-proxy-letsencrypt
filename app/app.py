@@ -143,7 +143,7 @@ def update(version):
 
             if version == 1:
                 client.put(
-                    self.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
+                    client.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
                     data=open(file, 'rb').read(),
                     headers={'Content-Type': 'application/octet-stream'})
     
