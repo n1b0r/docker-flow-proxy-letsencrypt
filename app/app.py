@@ -41,7 +41,7 @@ class DockerFlowProxyAPIClient:
     def put(self, *args, **kwargs):
         return self._request('put', *args, **kwargs)
     def get(self, *args, **kwargs):
-        return self._request('put', *args, **kwargs)
+        return self._request('get', *args, **kwargs)
 
 
 class CertbotClient():
