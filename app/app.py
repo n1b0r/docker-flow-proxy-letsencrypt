@@ -31,7 +31,7 @@ class DockerFlowProxyAPIClient:
             self.adaptor = requests
 
     def url(self, version, url):
-        return self.base_url + '/v{}/docker-flow-proxy'.format(version) + url
+        return 'http://{}:8080/v{}/docker-flow-proxy'.format(self.base_url, version) + url
 
     def _request(self, method_name, url, **kwargs):
         logger.debug('[{}] {}'.format(method_name, url))
