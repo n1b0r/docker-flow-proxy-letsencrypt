@@ -124,7 +124,7 @@ def update(version):
         email = args.get('letsencrypt.email')
         cert = None
 
-        if update_cert(domain, email):
+        if client.update_cert(domain, email):
             logger.info('certificates successfully generated using certbot.')
 
             combined_path = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
