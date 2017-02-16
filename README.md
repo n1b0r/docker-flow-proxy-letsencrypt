@@ -46,7 +46,7 @@ services:
       placement:
         constraints: [node.role == manager]
   proxy-le:
-    image: robin/docker-flow-proxy-letsencrypt
+    image: nibOr/docker-flow-proxy-letsencrypt
     networks:
       - proxy
     environment:
@@ -120,3 +120,4 @@ We should provide a new env var for `docker-flow-swarm-listener` to be able to s
 ## Things to do
 
   * renewal process based on cron (we night need that `docker-flow-swarm-listener` gives us the list of services).
+  * remove cert process.
