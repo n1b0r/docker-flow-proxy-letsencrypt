@@ -114,7 +114,7 @@ def update(version):
     args = request.args
     logger.info('request for service: {}'.format(args.get('serviceName')))
     
-    client = DockerFlowProxyAPIClient(DF_PROXY_SERVICE_BASE_URL)
+    client = DockerFlowProxyAPIClient()
     
     if is_letsencrypt_service(args):
         logger.info('letencrypt service detected.')
