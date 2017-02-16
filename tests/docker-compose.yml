@@ -32,6 +32,7 @@ services:
     environment:
       - DF_PROXY_SERVICE_NAME=proxy-${CI_BUILD_REF_NAME}_proxy
       - CERTBOT_OPTIONS=--staging
+      - LOG=debug
     deploy:
       replicas: 1
       labels:
