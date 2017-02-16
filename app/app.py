@@ -113,10 +113,12 @@ def acme_challenge(path):
 def update(version):
     args = request.args
     logger.info('request for service: {}'.format(args.get('serviceName')))
+    
+    client = DockerFlowProxyAPIClient(DF_PROXY_SERVICE_BASE_URL)
+    
     if is_letsencrypt_service(args):
         logger.info('letencrypt service detected.')
 
-        client = DockerFlowProxyAPIClient(DF_PROXY_SERVICE_BASE_URL)
 
         domain = args.get('letsencrypt.host')
         email = args.get('letsencrypt.email')
