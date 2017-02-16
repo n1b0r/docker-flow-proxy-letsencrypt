@@ -144,7 +144,7 @@ def update(version):
             if version == 1:
                 client.put(
                     client.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
-                    data=open(file, 'rb').read(),
+                    data=open(cert, 'rb').read(),
                     headers={'Content-Type': 'application/octet-stream'})
     
     if version == 1:
@@ -157,7 +157,7 @@ def update(version):
         if cert:
             client.put(client.url(version, '/reconfigure?{}'.format(
                 '&'.join(['{}={}'.format(k, v) for k, v in args.items()] + ['certName={}'.format(os.path.basename(cert))]))),
-                data=open(file, 'rb').read(),
+                data=open(cert, 'rb').read(),
                 headers={'Content-Type': 'application/octet-stream'})
         else:
             client.get(client.url(version, '/reconfigure?{}'.format(
