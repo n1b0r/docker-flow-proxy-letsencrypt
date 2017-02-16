@@ -146,19 +146,19 @@ def update(version):
                     headers={'Content-Type': 'application/octet-stream'})
     
     if version == 1:
-        client.get(self.url(version, '/reconfigure?{}'.format(
+        client.get(client.url(version, '/reconfigure?{}'.format(
             '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
     else:
         # version > 2 should provide certificate in the PUT request that
         # reconfigure the proxy.
 
         if cert:
-            client.put(self.url(version, '/reconfigure?{}'.format(
+            client.put(client.url(version, '/reconfigure?{}'.format(
                 '&'.join(['{}={}'.format(k, v) for k, v in args.items()] + ['certName={}'.format(os.path.basename(cert))]))),
                 data=open(file, 'rb').read(),
                 headers={'Content-Type': 'application/octet-stream'})
         else:
-            client.get(self.url(version, '/reconfigure?{}'.format(
+            client.get(client.url(version, '/reconfigure?{}'.format(
                 '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
 
 
