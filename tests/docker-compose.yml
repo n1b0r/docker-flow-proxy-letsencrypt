@@ -26,7 +26,7 @@ services:
       placement:
         constraints: [node.role == manager]
   proxy-le:
-    image: robin/docker-flow-proxy-letsencrypt
+    image: robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
     networks:
       - test-network-dfple
     environment:
