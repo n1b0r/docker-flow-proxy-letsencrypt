@@ -28,6 +28,7 @@ test:
     - docker stack rm proxy-${CI_BUILD_REF_NAME}
     - docker network rm test-network-dfple
     # publish
+    - docker tag robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME} nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
     - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
     - docker push nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
   tags:
