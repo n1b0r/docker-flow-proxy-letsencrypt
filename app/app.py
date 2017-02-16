@@ -48,24 +48,24 @@ class CertbotClient():
     def __init__(self):
         pass
 
-    def run(cmd):
+    def run(self, cmd):
         logger.debug('executing cmd : {}'.format(cmd.split()))
         process = subprocess.Popen(cmd.split(),
                                    stdout=subprocess.PIPE, 
                                    stderr=subprocess.PIPE)
         output, error = process.communicate()
-        logger.debug("o {}".format(output))
+        logger.debug("o: {}".format(output))
         if error:
             logger.debug(error)
         logger.debug("r: {}".format(process.returncode))
         
         return output, error, process.returncode
 
-    def update_cert(domains, email):
+    def update_cert(self, domains, email):
         """
         Update certifacts
         """
-        output, error, code = run("""certbot certonly \
+        output, error, code = self.run("""certbot certonly \
                     --agree-tos \
                     --domains {domains} \
                     --email {email} \
