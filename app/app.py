@@ -18,7 +18,7 @@ DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
 DF_PROXY_SERVICE_BASE_URL = os.environ.get('DF_PROXY_SERVICE_BASE_URL')
 CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
 CERTBOT_OPTIONS = os.environ.get('CERTBOT_OPTIONS', '')
-CERTBOT_LIVE_FOLDER = "/etc/letsencrypt/"
+CERTBOT_FOLDER = "/etc/letsencrypt/"
 
 class DockerFlowProxyAPIClient:
     def __init__(self, DF_PROXY_SERVICE_BASE_URL=None, adaptor=None):
@@ -136,10 +136,10 @@ def update(version):
                 base_domain = domains.split(',')[0]
 
                 # generate combined certificate
-                combined_path = os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "combined.pem")
+                combined_path = os.path.join(CERTBOT_FOLDER, 'live', base_domain, "combined.pem")
                 with open(combined_path, "w") as combined, \
-                     open(os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "privkey.pem"), "r") as priv, \
-                     open(os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "fullchain.pem"), "r") as fullchain:
+                     open(os.path.join(CERTBOT_FOLDER, 'live', base_domain, "privkey.pem"), "r") as priv, \
+                     open(os.path.join(CERTBOT_FOLDER, 'live', base_domain, "fullchain.pem"), "r") as fullchain:
 
                     combined.write(fullchain.read())
                     combined.write(priv.read())
@@ -151,17 +151,17 @@ def update(version):
                     #  * combined
                     os.symlink(
                         os.path.join('./live', base_domain, "combined.pem"),
-                        os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain)))
+                        os.path.join(CERTBOT_FOLDER, "{}.pem".format(domain)))
                     #  * domain.crt
                     os.symlink(
                         os.path.join('./live', base_domain, "fullchain.pem"),
-                        os.path.join(CERTBOT_LIVE_FOLDER, "{}.crt".format(domain)))
+                        os.path.join(CERTBOT_FOLDER, "{}.crt".format(domain)))
                     #  * domain.key
                     os.symlink(
                         os.path.join('./live', base_domain, "privkey.pem"),
-                        os.path.join(CERTBOT_LIVE_FOLDER, "{}.key".format(domain)))
+                        os.path.join(CERTBOT_FOLDER, "{}.key".format(domain)))
 
-                    cert = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
+                    cert = os.path.join(CERTBOT_FOLDER, "{}.pem".format(domain))
                     client.put(
                         client.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
                         data=open(cert, 'rb').read(),
