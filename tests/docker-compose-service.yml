@@ -1,0 +1,20 @@
+version: "3"
+services:
+  whoami:
+    image: jwilder/whoami
+    networks:
+      - test-network-dfple
+    deploy:
+      replicas: 1
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.serviceDomain=${CI_BUILD_REF_NAME}.ks2.nibor.me
+        - com.df.letsencrypt.host=${CI_BUILD_REF_NAME}.ks2.nibor.me
+        - com.df.letsencrypt.email=test@test.com
+        - com.df.servicePath=/
+        - com.df.srcPort=443
+        - com.df.port=8000
+networks:
+  test-network-dfple:
+    external: true
