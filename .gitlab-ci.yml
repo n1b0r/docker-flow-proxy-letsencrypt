@@ -36,11 +36,13 @@ test:
   only:
     - develop
     - master
+    - tags
 
 
 release:
   stage: release
   script:
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
     - docker pull nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
     - docker tag nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME} robin/docker-flow-proxy-letsencrypt:latest
     - docker push nib0r/docker-flow-proxy-letsencrypt:latest
@@ -53,6 +55,7 @@ release:
 release_tags:
   stage: release
   script:
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
     - docker build -t nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_TAG} .
     - docker push nib0r/docker-flow-proxy-letsencrypt:$CI_BUILD_TAG
   only:
