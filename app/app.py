@@ -111,57 +111,65 @@ def acme_challenge(path):
 
 @app.route("/v<int:version>/docker-flow-proxy-letsencrypt/reconfigure")
 def update(version):
-    args = request.args
-    logger.info('request for service: {}'.format(args.get('serviceName')))
-    
-    client = DockerFlowProxyAPIClient()
-    
-    if is_letsencrypt_service(args):
-        logger.info('letencrypt service detected.')
 
-
-        domain = args.get('letsencrypt.host')
-        email = args.get('letsencrypt.email')
-        cert = None
-
-        cerbot = CertbotClient()
-
-        if cerbot.update_cert(domain, email):
-            logger.info('certificates successfully generated using certbot.')
-
-            combined_path = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
-            # create combined cert.
-            with open(combined_path, "w") as combined, \
-                 open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "privkey.pem"), "r") as priv, \
-                 open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "fullchain.pem"), "r") as fullchain:
-
-                combined.write(fullchain.read())
-                combined.write(priv.read())
-                logger.info('combined certificate generated into "{}".'.format(combined_path))
-
-            cert = combined_path
-
-            if version == 1:
-                client.put(
-                    client.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
-                    data=open(cert, 'rb').read(),
-                    headers={'Content-Type': 'application/octet-stream'})
-    
     if version == 1:
-        client.get(client.url(version, '/reconfigure?{}'.format(
-            '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
-    else:
-        # version > 2 should provide certificate in the PUT request that
-        # reconfigure the proxy.
 
-        if cert:
-            client.put(client.url(version, '/reconfigure?{}'.format(
-                '&'.join(['{}={}'.format(k, v) for k, v in args.items()] + ['certName={}'.format(os.path.basename(cert))]))),
-                data=open(cert, 'rb').read(),
-                headers={'Content-Type': 'application/octet-stream'})
-        else:
-            client.get(client.url(version, '/reconfigure?{}'.format(
-                '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
+        args = request.args
+        logger.info('request for service: {}'.format(args.get('serviceName')))
+        
+        client = DockerFlowProxyAPIClient()
+        
+        if is_letsencrypt_service(args):
+            logger.info('letencrypt service detected.')
+
+
+            domains = args.get('letsencrypt.host')
+            email = args.get('letsencrypt.email')
+            cert = None
+
+            cerbot = CertbotClient()
+
+            if cerbot.update_cert(domains, email):
+                logger.info('certificates successfully generated using certbot.')
+
+                # if multiple domains comma separated, take only the first one
+                base_domain = domains.split(',')[0]
+
+               
+                for domain in domains.split(','):
+                    
+                    # generate combined certificate
+                    combined_path = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
+                    # create combined cert.
+                    with open(combined_path, "w") as combined, \
+                         open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "privkey.pem"), "r") as priv, \
+                         open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "fullchain.pem"), "r") as fullchain:
+
+                        combined.write(fullchain.read())
+                        combined.write(priv.read())
+                        logger.info('combined certificate generated into "{}".'.format(combined_path))
+
+                    # create symlinks for
+                    #  * domain.crt
+                    os.symlink(
+                        os.path.join(CERTBOT_LIVE_FOLDER, domain, "fullchain.pem"),
+                        os.path.join(CERTBOT_LIVE_FOLDER, "{}.crt".format(domain)))
+                    #  * domain.key
+                    os.symlink(
+                        os.path.join(CERTBOT_LIVE_FOLDER, domain, "privkey.pem"),
+                        os.path.join(CERTBOT_LIVE_FOLDER, "{}.key".format(domain)))
+
+                    cert = combined_path
+
+                    client.put(
+                        client.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
+                        data=open(cert, 'rb').read(),
+                        headers={'Content-Type': 'application/octet-stream'})
+
+    
+    client.get(client.url(version, '/reconfigure?{}'.format(
+        '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
+
 
 
     return "OK {}".format(request.args)
