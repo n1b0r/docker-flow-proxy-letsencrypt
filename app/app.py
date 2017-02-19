@@ -135,32 +135,34 @@ def update(version):
                 # if multiple domains comma separated, take only the first one
                 base_domain = domains.split(',')[0]
 
-               
+                # generate combined certificate
+                combined_path = os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "combined.pem")
+                # create combined cert.
+                with open(combined_path, "w") as combined, \
+                     open(os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "privkey.pem"), "r") as priv, \
+                     open(os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "fullchain.pem"), "r") as fullchain:
+
+                    combined.write(fullchain.read())
+                    combined.write(priv.read())
+                    logger.info('combined certificate generated into "{}".'.format(combined_path))
+
                 for domain in domains.split(','):
                     
-                    # generate combined certificate
-                    combined_path = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
-                    # create combined cert.
-                    with open(combined_path, "w") as combined, \
-                         open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "privkey.pem"), "r") as priv, \
-                         open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "fullchain.pem"), "r") as fullchain:
-
-                        combined.write(fullchain.read())
-                        combined.write(priv.read())
-                        logger.info('combined certificate generated into "{}".'.format(combined_path))
-
                     # create symlinks for
+                    #  * combined
+                    os.symlink(
+                        os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "combined.pem"),
+                        os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain)))
                     #  * domain.crt
                     os.symlink(
-                        os.path.join(CERTBOT_LIVE_FOLDER, domain, "fullchain.pem"),
+                        os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "fullchain.pem"),
                         os.path.join(CERTBOT_LIVE_FOLDER, "{}.crt".format(domain)))
                     #  * domain.key
                     os.symlink(
-                        os.path.join(CERTBOT_LIVE_FOLDER, domain, "privkey.pem"),
+                        os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "privkey.pem"),
                         os.path.join(CERTBOT_LIVE_FOLDER, "{}.key".format(domain)))
 
-                    cert = combined_path
-
+                    cert = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
                     client.put(
                         client.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
                         data=open(cert, 'rb').read(),
@@ -170,9 +172,7 @@ def update(version):
     client.get(client.url(version, '/reconfigure?{}'.format(
         '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
 
-
-
-    return "OK {}".format(request.args)
+    return "OK"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080, debug=True, threaded=True)
