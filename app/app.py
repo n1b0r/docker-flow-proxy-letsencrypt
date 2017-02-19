@@ -151,15 +151,15 @@ def update(version):
                     # create symlinks for
                     #  * combined
                     os.symlink(
-                        os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "combined.pem"),
+                        os.path.join('.', base_domain, "combined.pem"),
                         os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain)))
                     #  * domain.crt
                     os.symlink(
-                        os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "fullchain.pem"),
+                        os.path.join('.', base_domain, "fullchain.pem"),
                         os.path.join(CERTBOT_LIVE_FOLDER, "{}.crt".format(domain)))
                     #  * domain.key
                     os.symlink(
-                        os.path.join(CERTBOT_LIVE_FOLDER, base_domain, "privkey.pem"),
+                        os.path.join('.', base_domain, "privkey.pem"),
                         os.path.join(CERTBOT_LIVE_FOLDER, "{}.key".format(domain)))
 
                     cert = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
