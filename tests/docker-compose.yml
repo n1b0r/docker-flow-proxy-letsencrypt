@@ -10,7 +10,7 @@ services:
     environment:
       - LISTENER_ADDRESS=swarm-listener
       - MODE=swarm
-      - SERVICE_NAME=proxy-${CI_BUILD_REF_NAME}_proxy
+      - SERVICE_NAME=proxy-${CI_BUILD_REF_SLUG}_proxy
     deploy:
       replicas: 1
   swarm-listener:
@@ -21,7 +21,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DF_NOTIFY_CREATE_SERVICE_URL=http://proxy-le:8080/v1/docker-flow-proxy-letsencrypt/reconfigure
-      - DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy-${CI_BUILD_REF_NAME}_proxy:8080/v1/docker-flow-proxy/remove
+      - DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy-${CI_BUILD_REF_SLUG}_proxy:8080/v1/docker-flow-proxy/remove
     deploy:
       placement:
         constraints: [node.role == manager]
@@ -30,7 +30,7 @@ services:
     networks:
       - test-network-dfple
     environment:
-      - DF_PROXY_SERVICE_NAME=proxy-${CI_BUILD_REF_NAME}_proxy
+      - DF_PROXY_SERVICE_NAME=proxy-${CI_BUILD_REF_SLUG}_proxy
       - CERTBOT_OPTIONS=--staging
       - LOG=debug
     deploy:

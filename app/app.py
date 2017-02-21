@@ -18,7 +18,7 @@ DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
 DF_PROXY_SERVICE_BASE_URL = os.environ.get('DF_PROXY_SERVICE_BASE_URL')
 CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
 CERTBOT_OPTIONS = os.environ.get('CERTBOT_OPTIONS', '')
-CERTBOT_LIVE_FOLDER = "/etc/letsencrypt/live/"
+CERTBOT_FOLDER = "/etc/letsencrypt/"
 
 class DockerFlowProxyAPIClient:
     def __init__(self, DF_PROXY_SERVICE_BASE_URL=None, adaptor=None):
@@ -111,60 +111,67 @@ def acme_challenge(path):
 
 @app.route("/v<int:version>/docker-flow-proxy-letsencrypt/reconfigure")
 def update(version):
-    args = request.args
-    logger.info('request for service: {}'.format(args.get('serviceName')))
-    
-    client = DockerFlowProxyAPIClient()
-    
-    if is_letsencrypt_service(args):
-        logger.info('letencrypt service detected.')
 
-
-        domain = args.get('letsencrypt.host')
-        email = args.get('letsencrypt.email')
-        cert = None
-
-        cerbot = CertbotClient()
-
-        if cerbot.update_cert(domain, email):
-            logger.info('certificates successfully generated using certbot.')
-
-            combined_path = os.path.join(CERTBOT_LIVE_FOLDER, "{}.pem".format(domain))
-            # create combined cert.
-            with open(combined_path, "w") as combined, \
-                 open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "privkey.pem"), "r") as priv, \
-                 open(os.path.join(CERTBOT_LIVE_FOLDER, domain, "fullchain.pem"), "r") as fullchain:
-
-                combined.write(fullchain.read())
-                combined.write(priv.read())
-                logger.info('combined certificate generated into "{}".'.format(combined_path))
-
-            cert = combined_path
-
-            if version == 1:
-                client.put(
-                    client.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
-                    data=open(cert, 'rb').read(),
-                    headers={'Content-Type': 'application/octet-stream'})
-    
     if version == 1:
-        client.get(client.url(version, '/reconfigure?{}'.format(
-            '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
-    else:
-        # version > 2 should provide certificate in the PUT request that
-        # reconfigure the proxy.
 
-        if cert:
-            client.put(client.url(version, '/reconfigure?{}'.format(
-                '&'.join(['{}={}'.format(k, v) for k, v in args.items()] + ['certName={}'.format(os.path.basename(cert))]))),
-                data=open(cert, 'rb').read(),
-                headers={'Content-Type': 'application/octet-stream'})
-        else:
-            client.get(client.url(version, '/reconfigure?{}'.format(
-                '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
+        args = request.args
+        logger.info('request for service: {}'.format(args.get('serviceName')))
+        
+        client = DockerFlowProxyAPIClient()
+        
+        if is_letsencrypt_service(args):
+            logger.info('letencrypt service detected.')
 
 
-    return "OK {}".format(request.args)
+            domains = args.get('letsencrypt.host')
+            email = args.get('letsencrypt.email')
+            cert = None
+
+            cerbot = CertbotClient()
+
+            if cerbot.update_cert(domains, email):
+                logger.info('certificates successfully generated using certbot.')
+
+                # if multiple domains comma separated, take only the first one
+                base_domain = domains.split(',')[0]
+
+                # generate combined certificate
+                combined_path = os.path.join(CERTBOT_FOLDER, 'live', base_domain, "combined.pem")
+                with open(combined_path, "w") as combined, \
+                     open(os.path.join(CERTBOT_FOLDER, 'live', base_domain, "privkey.pem"), "r") as priv, \
+                     open(os.path.join(CERTBOT_FOLDER, 'live', base_domain, "fullchain.pem"), "r") as fullchain:
+
+                    combined.write(fullchain.read())
+                    combined.write(priv.read())
+                    logger.info('combined certificate generated into "{}".'.format(combined_path))
+
+                for domain in domains.split(','):
+                    
+                    # create symlinks for
+                    #  * combined
+                    os.symlink(
+                        os.path.join('./live', base_domain, "combined.pem"),
+                        os.path.join(CERTBOT_FOLDER, "{}.pem".format(domain)))
+                    #  * domain.crt
+                    os.symlink(
+                        os.path.join('./live', base_domain, "fullchain.pem"),
+                        os.path.join(CERTBOT_FOLDER, "{}.crt".format(domain)))
+                    #  * domain.key
+                    os.symlink(
+                        os.path.join('./live', base_domain, "privkey.pem"),
+                        os.path.join(CERTBOT_FOLDER, "{}.key".format(domain)))
+
+                    cert = os.path.join(CERTBOT_FOLDER, "{}.pem".format(domain))
+                    client.put(
+                        client.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
+                        data=open(cert, 'rb').read(),
+                        headers={'Content-Type': 'application/octet-stream'})
+
+    
+    client.get(client.url(version, '/reconfigure?{}'.format(
+        '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
+
+    return "OK"
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080, debug=True, threaded=True)

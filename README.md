@@ -21,18 +21,23 @@ docker network create -d overlay proxy
 ```
 version: "3"
 services:
+
   proxy:
     image: vfarcic/docker-flow-proxy
     ports:
       - 80:80
       - 443:443
+    volumes:
+      - dfp-certs:/certs
     networks:
       - proxy
     environment:
       - LISTENER_ADDRESS=swarm-listener
       - MODE=swarm
+      - SERVICE_NAME=proxy_proxy
     deploy:
       replicas: 1
+
   swarm-listener:
     image: vfarcic/docker-flow-swarm-listener
     networks:
@@ -45,12 +50,17 @@ services:
     deploy:
       placement:
         constraints: [node.role == manager]
+
   proxy-le:
-    image: nibOr/docker-flow-proxy-letsencrypt
+    image: nib0r/docker-flow-proxy-letsencrypt
     networks:
       - proxy
     environment:
-      - DF_PROXY_SERVICE_NAME=proxy
+      - DF_PROXY_SERVICE_NAME=proxy_proxy
+      # - LOG=debug
+      # - CERTBOT_OPTIONS=--staging
+    volumes:
+      - le-certs:/etc/letsencrypt
     deploy:
       replicas: 1
       labels:
@@ -60,6 +70,11 @@ services:
         - com.df.port=8080
 networks:
   proxy:
+    external: true
+volumes:
+  le-certs:
+    external: true
+  dfp-certs:
     external: true
 
 ```
