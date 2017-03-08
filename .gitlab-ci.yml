@@ -17,6 +17,7 @@ test:
     - rm -rf /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
     - mkdir -p /tmp/${CI_BUILD_REF_SLUG}
     - cp tests/docker-compose-secrets.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-secrets.yml
+    - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
     - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-service.yml
     - cd /tmp/${CI_BUILD_REF_SLUG}
     - docker stack deploy -c docker-compose-secrets.yml proxy-${CI_BUILD_REF_SLUG}
@@ -35,8 +36,6 @@ test:
     - docker network create -d overlay test-network-dfple
     - rm -rf /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
     - mkdir -p /tmp/${CI_BUILD_REF_SLUG}
-    - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
-    - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-service.yml
     - cd /tmp/${CI_BUILD_REF_SLUG}
     - docker stack deploy -c docker-compose.yml proxy-${CI_BUILD_REF_SLUG}
     - sleep 10
