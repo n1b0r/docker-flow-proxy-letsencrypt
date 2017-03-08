@@ -11,6 +11,26 @@ test:
   script:
     # build image 
     - docker build -t robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG} .
+    
+    # run test with secrets
+    - docker network create -d overlay test-network-dfple
+    - rm -rf /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
+    - mkdir -p /tmp/${CI_BUILD_REF_SLUG}
+    - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
+    - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-service.yml
+    - cd /tmp/${CI_BUILD_REF_SLUG}
+    - docker stack deploy -c docker-compose-secrets.yml proxy-${CI_BUILD_REF_SLUG}
+    - sleep 10
+    - docker stack deploy -c docker-compose-service.yml service-${CI_BUILD_REF_SLUG}
+    - sleep 30
+    - curl -k "https://${CI_BUILD_REF_SLUG}.ks2.nibor.me"
+    # clean
+    - docker stack rm service-${CI_BUILD_REF_SLUG}
+    - docker stack rm proxy-${CI_BUILD_REF_SLUG}
+    - docker network rm test-network-dfple
+
+    - sleep 10
+
     # run test
     - docker network create -d overlay test-network-dfple
     - rm -rf /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
@@ -28,22 +48,8 @@ test:
     - docker stack rm proxy-${CI_BUILD_REF_SLUG}
     - docker network rm test-network-dfple
 
-    # run test with secrets
-    - docker network create -d overlay test-network-dfple
-    - rm -rf /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
-    - mkdir -p /tmp/${CI_BUILD_REF_SLUG}
-    - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
-    - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-service.yml
-    - cd /tmp/${CI_BUILD_REF_SLUG}
-    - docker stack deploy -c docker-compose-secrets.yml proxy-${CI_BUILD_REF_SLUG}
-    - sleep 10
-    - docker stack deploy -c docker-compose-service.yml service-${CI_BUILD_REF_SLUG}
-    - sleep 30
-    - curl -k "https://${CI_BUILD_REF_SLUG}.ks2.nibor.me"
-    # clean
-    - docker stack rm service-${CI_BUILD_REF_SLUG}
-    - docker stack rm proxy-${CI_BUILD_REF_SLUG}
-    - docker network rm test-network-dfple
+    
+    
 
 
 
