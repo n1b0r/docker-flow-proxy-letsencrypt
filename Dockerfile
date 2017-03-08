@@ -3,7 +3,8 @@ FROM python:alpine
 RUN apk add --update certbot
 
 ENV DF_NOTIFY_CREATE_SERVICE_URL="http://proxy:8080/v1/docker-flow-proxy/reconfigure" \
-	DF_PROXY_SERVICE_BASE_URL="http://proxy:8080/v1/docker-flow-proxy"
+	DF_PROXY_SERVICE_BASE_URL="http://proxy:8080/v1/docker-flow-proxy" \
+	DOCKER_SOCKET_PATH="/var/run/docker.sock"
 
 ADD ./app/requirements.txt /app/requirements.txt
 
