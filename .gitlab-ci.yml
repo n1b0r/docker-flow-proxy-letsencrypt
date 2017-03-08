@@ -10,14 +10,14 @@ test:
   stage: test
   script:
     # build image 
-    - docker build -t robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME} .
+    - docker build -t robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG} .
     # run test
     - docker network create -d overlay test-network-dfple
-    - rm -rf /tmp/${CI_BUILD_REF_NAME}/docker-compose.yml
-    - mkdir -p /tmp/${CI_BUILD_REF_NAME}
-    - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_NAME}/docker-compose.yml
-    - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_NAME}/docker-compose-service.yml
-    - cd /tmp/${CI_BUILD_REF_NAME}
+    - rm -rf /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
+    - mkdir -p /tmp/${CI_BUILD_REF_SLUG}
+    - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
+    - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-service.yml
+    - cd /tmp/${CI_BUILD_REF_SLUG}
     - docker stack deploy -c docker-compose.yml proxy-${CI_BUILD_REF_SLUG}
     - sleep 10
     - docker stack deploy -c docker-compose-service.yml service-${CI_BUILD_REF_SLUG}
@@ -28,13 +28,14 @@ test:
     - docker stack rm proxy-${CI_BUILD_REF_SLUG}
     - docker network rm test-network-dfple
     # publish
-    - docker tag robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME} nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
+    - docker tag robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG} nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG}
     - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
-    - docker push nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
+    - docker push nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG}
   tags:
     - ks2.nibor.me
   only:
     - develop
+    - feature/*
     - master
     - tags
 
