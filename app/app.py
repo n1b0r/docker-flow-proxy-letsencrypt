@@ -166,7 +166,7 @@ def update(version):
 
                         if len(services) == 1 and len(secrets) == 1:
                             service = services[0]
-                            secret = secrets[]
+                            secret = secrets[0]
                             secrets.append(SecretReference(
                                 secret.id, secret.name,
                                 filename='cert-{}'.format(domain)))
