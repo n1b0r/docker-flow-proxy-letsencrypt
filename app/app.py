@@ -137,6 +137,7 @@ def update(version):
                     combined.write(priv.read())
                     logger.info('combined certificate generated into "{}".'.format(combined_path))
 
+                log.debug('docker {} {}'.format(docker_client, docker_client != None))
                 for domain in domains.split(','):
                     
                     # generate symlinks
@@ -151,7 +152,7 @@ def update(version):
                             os.path.join(CERTBOT_FOLDER, "{}.{}".format(domain, cert_extension)))
 
                         # for each certificate, generate a secret as it could be used by other services
-                        if docker_client:
+                        if docker_client != None:
                             secret_name = "dfple-cert-{}.{}".format(domain, cert_extension)
                             log.debug('creating secret {}'.format(secret_name))
                             # store certificates as docker secrets.
@@ -160,7 +161,7 @@ def update(version):
                                 data=open(cert, 'rb').read())
                             log.debug('secret created {}'.format(secret))
 
-                    if docker_client:
+                    if docker_client != None:
 
                         # if docker api is provided, use it to update secrets on docker-flow-proxy service
                         services = docker_client.services.list(
