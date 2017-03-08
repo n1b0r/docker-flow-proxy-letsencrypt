@@ -104,6 +104,7 @@ def update(version):
     cerbot = CertbotClient()
     docker_client = None
     docker_socket_path = os.environ.get('DOCKER_SOCKET_PATH')
+    logger.debug('docker_socket_path {}'.format(docker_socket_path))
     if docker_socket_path and os.path.isfile(docker_socket_path):
         docker_client = docker.DockerClient(base_url='unix:/{}'.format(docker_socket_path))
 
