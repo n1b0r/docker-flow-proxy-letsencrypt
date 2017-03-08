@@ -88,19 +88,6 @@ class CertbotClient():
 
         return True
 
-def is_letsencrypt_service(args):
-    """ Check if given service has special letsencrypt labels """
-
-    found = True
-    for label in ('letsencrypt.host', 'letsencrypt.email'):
-        if label in args.keys():
-            logger.debug('argument {} found : {}'.format(label, args.get(label)))
-        else:
-            found = False
-            logger.debug('argument {} NOT found.'.format(label))
-
-    return found
-
 
 app = Flask(__name__)
 
@@ -117,9 +104,10 @@ def update(version):
         args = request.args
         logger.info('request for service: {}'.format(args.get('serviceName')))
         
-        client = DockerFlowProxyAPIClient()
+        dfp_client = DockerFlowProxyAPIClient()
         
-        if is_letsencrypt_service(args):
+        is_letsencrypt_service = all([label in args.keys() for label in ('letsencrypt.host', 'letsencrypt.email')])
+        if is_letsencrypt_service:
             logger.info('letencrypt service detected.')
 
 
@@ -161,14 +149,27 @@ def update(version):
                         os.path.join('./live', base_domain, "privkey.pem"),
                         os.path.join(CERTBOT_FOLDER, "{}.key".format(domain)))
 
-                    cert = os.path.join(CERTBOT_FOLDER, "{}.pem".format(domain))
-                    client.put(
-                        client.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
-                        data=open(cert, 'rb').read(),
-                        headers={'Content-Type': 'application/octet-stream'})
+                    
+                    # check if docker api is provided
+                    if os.path.isfile(os.environ.get('DOCKER_SOCKET_PATH')):
+                        # store certificates as docker secrets.
 
-    
-    client.get(client.url(version, '/reconfigure?{}'.format(
+                        # attach secret to docker-flow-proxy service
+
+                        # send a reload ? 
+
+                    else:
+                        # old style, use docker-flow-proxy PUT request to update certs
+                        cert = os.path.join(CERTBOT_FOLDER, "{}.pem".format(domain))
+                        dfp_client.put(
+                            dfp_client.url(
+                                version, 
+                                '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
+                            data=open(cert, 'rb').read(),
+                            headers={'Content-Type': 'application/octet-stream'})
+
+    # proxy requests to docker-flow-proxy
+    dfp_client.get(dfp_client.url(version, '/reconfigure?{}'.format(
         '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
 
     return "OK"
