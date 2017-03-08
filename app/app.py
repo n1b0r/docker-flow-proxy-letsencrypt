@@ -150,9 +150,12 @@ def update(version):
                         ('privkey', 'key')]
 
                     for cert_type, cert_extension in cert_types:
+
+                        dest_file = os.path.join(CERTBOT_FOLDER, "{}.{}".format(domain, cert_extension))
+
                         os.symlink(
                             os.path.join('./live', base_domain, "{}.pem".format(cert_type)),
-                            os.path.join(CERTBOT_FOLDER, "{}.{}".format(domain, cert_extension)))
+                            dest_file)
 
                         # for each certificate, generate a secret as it could be used by other services
                         if docker_client != None:
@@ -161,7 +164,7 @@ def update(version):
                             # store certificates as docker secrets.
                             secret = docker_client.secrets().create(
                                 name=secret_name,
-                                data=open(cert, 'rb').read())
+                                data=open(dest_file, 'rb').read())
                             logger.debug('secret created {}'.format(secret))
 
                     if docker_client != None:
