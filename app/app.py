@@ -152,12 +152,16 @@ def update(version):
 
                         # for each certificate, generate a secret as it could be used by other services
                         if docker_client:
+                            secret_name = "dfple-cert-{}.{}".format(domain, cert_extension)
+                            log.debug('creating secret {}'.format(secret_name))
                             # store certificates as docker secrets.
                             secret = docker_client.secrets.create(
-                                name="dfple-cert-{}.{}".format(domain, cert_extension),
+                                name=secret_name,
                                 data=open(cert, 'rb').read())
+                            log.debug('secret created {}'.format(secret))
 
                     if docker_client:
+
                         # if docker api is provided, use it to update secrets on docker-flow-proxy service
                         services = docker_client.services.list(
                             filters={'name': os.environ.get('DF_PROXY_SERVICE_NAME')})
@@ -167,9 +171,11 @@ def update(version):
                         if len(services) == 1 and len(secrets) == 1:
                             service = services[0]
                             secret = secrets[0]
+                            log.debug('service found: {} secret found {}'.format(service.name, secret.name))
                             secrets.append(SecretReference(
                                 secret.id, secret.name,
                                 filename='cert-{}'.format(domain)))
+                            log.debug('updating secrets on service')
                             service.update(secrets=secrets)
 
                         else:
