@@ -1,3 +1,4 @@
+import docker
 import logging
 import os
 import requests
@@ -98,13 +99,19 @@ def acme_challenge(path):
 
 @app.route("/v<int:version>/docker-flow-proxy-letsencrypt/reconfigure")
 def update(version):
+    
+    dfp_client = DockerFlowProxyAPIClient()
+    cerbot = CertbotClient()
+    docker_client = None
+    docker_socket_path = os.environ.get('DOCKER_SOCKET_PATH')
+    if os.path.isfile(docker_socket_path):                
+        docker_client = docker.DockerClient(base_url='unix:/{}'.format(docker_socket_path))
 
     if version == 1:
 
         args = request.args
         logger.info('request for service: {}'.format(args.get('serviceName')))
         
-        dfp_client = DockerFlowProxyAPIClient()
         
         is_letsencrypt_service = all([label in args.keys() for label in ('letsencrypt.host', 'letsencrypt.email')])
         if is_letsencrypt_service:
@@ -113,9 +120,6 @@ def update(version):
 
             domains = args.get('letsencrypt.host')
             email = args.get('letsencrypt.email')
-            cert = None
-
-            cerbot = CertbotClient()
 
             if cerbot.update_cert(domains, email):
                 logger.info('certificates successfully generated using certbot.')
@@ -135,28 +139,43 @@ def update(version):
 
                 for domain in domains.split(','):
                     
-                    # create symlinks for
-                    #  * combined
-                    os.symlink(
-                        os.path.join('./live', base_domain, "combined.pem"),
-                        os.path.join(CERTBOT_FOLDER, "{}.pem".format(domain)))
-                    #  * domain.crt
-                    os.symlink(
-                        os.path.join('./live', base_domain, "fullchain.pem"),
-                        os.path.join(CERTBOT_FOLDER, "{}.crt".format(domain)))
-                    #  * domain.key
-                    os.symlink(
-                        os.path.join('./live', base_domain, "privkey.pem"),
-                        os.path.join(CERTBOT_FOLDER, "{}.key".format(domain)))
+                    # generate symlinks
+                    cert_types = [
+                        ('combined', 'pem'),
+                        ('fullchain', 'crt'),
+                        ('privkey', 'key')]
 
-                    
-                    # check if docker api is provided
-                    if os.path.isfile(os.environ.get('DOCKER_SOCKET_PATH')):
-                        # store certificates as docker secrets.
+                    for cert_type, cert_extension in cert_types:
+                        os.symlink(
+                            os.path.join('./live', base_domain, "{}.pem".format(cert_type)),
+                            os.path.join(CERTBOT_FOLDER, "{}.{}".format(domain, cert_extension)))
 
-                        # attach secret to docker-flow-proxy service
+                        # for each certificate, generate a secret as it could be used by other services
+                        if docker_client:
+                            # store certificates as docker secrets.
+                            secret = docker_client.secrets.create(
+                                name="dfple-cert-{}.{}".format(domain, cert_extension),
+                                data=open(cert, 'rb').read())
 
-                        # send a reload ? 
+                    if docker_client:
+                        # if docker api is provided, use it to update secrets on docker-flow-proxy service
+                        services = docker_client.services.list(
+                            filters={'name': os.environ.get('DF_PROXY_SERVICE_NAME')})
+                        secrets = docker_client.secrets.list(
+                            filters={'name': "dfple-cert-{}.pem".format(domain)})
+
+                        if len(services) == 1 and len(secrets) == 1:
+                            service = services[0]
+                            secret = secrets[]
+                            secrets.append(SecretReference(
+                                secret.id, secret.name,
+                                filename='cert-{}'.format(domain)))
+                            service.update(secrets=secrets)
+
+                        else:
+                            logger.error('Could not find service named {} or secret named {}'.format(
+                                os.environ.get('DF_PROXY_SERVICE_NAME'),
+                                "dfple-cert-{}.pem".format(domain)))
 
                     else:
                         # old style, use docker-flow-proxy PUT request to update certs
