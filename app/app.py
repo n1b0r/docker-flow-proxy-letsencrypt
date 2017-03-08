@@ -174,6 +174,8 @@ def update(version):
                             filters={'name': os.environ.get('DF_PROXY_SERVICE_NAME')})
                         secrets = docker_client.secrets().list(
                             filters={'name': "dfple-cert-{}.pem".format(domain)})
+                        logger.debug('services: {}'.format(services))
+                        logger.debug('secrets: {}'.format(secrets))
 
                         if len(services) == 1 and len(secrets) == 1:
                             service = services[0]
