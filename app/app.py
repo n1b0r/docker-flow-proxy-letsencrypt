@@ -170,7 +170,7 @@ def update(version):
                     if docker_client != None:
 
                         # if docker api is provided, use it to update secrets on docker-flow-proxy service
-                        services = docker_client.services().list(
+                        services = docker_client.services.list(
                             filters={'name': os.environ.get('DF_PROXY_SERVICE_NAME')})
                         secrets = docker_client.secrets().list(
                             filters={'name': "dfple-cert-{}.pem".format(domain)})
