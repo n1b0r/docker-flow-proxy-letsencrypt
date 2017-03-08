@@ -165,7 +165,7 @@ def update(version):
                             secret = docker_client.secrets().create(
                                 name=secret_name,
                                 data=open(dest_file, 'rb').read())
-                            logger.debug('secret created {}'.format(secret.name))
+                            logger.debug('secret created {}'.format(secret.id))
 
                     if docker_client != None:
 
