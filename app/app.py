@@ -106,7 +106,9 @@ def update(version):
     docker_socket_path = os.environ.get('DOCKER_SOCKET_PATH')
     logger.debug('docker_socket_path {}'.format(docker_socket_path))
     if docker_socket_path and os.path.exists(docker_socket_path):
-        docker_client = docker.DockerClient(base_url='unix:/{}'.format(docker_socket_path))
+        docker_client = docker.DockerClient(
+            base_url='unix:/{}'.format(docker_socket_path),
+            version='1.25')
 
     if version == 1:
 
@@ -157,7 +159,7 @@ def update(version):
                             secret_name = "dfple-cert-{}.{}".format(domain, cert_extension)
                             logger.debug('creating secret {}'.format(secret_name))
                             # store certificates as docker secrets.
-                            secret = docker_client.secrets.create(
+                            secret = docker_client.secrets().create(
                                 name=secret_name,
                                 data=open(cert, 'rb').read())
                             logger.debug('secret created {}'.format(secret))
@@ -165,9 +167,9 @@ def update(version):
                     if docker_client != None:
 
                         # if docker api is provided, use it to update secrets on docker-flow-proxy service
-                        services = docker_client.services.list(
+                        services = docker_client.services().list(
                             filters={'name': os.environ.get('DF_PROXY_SERVICE_NAME')})
-                        secrets = docker_client.secrets.list(
+                        secrets = docker_client.secrets().list(
                             filters={'name': "dfple-cert-{}.pem".format(domain)})
 
                         if len(services) == 1 and len(secrets) == 1:
