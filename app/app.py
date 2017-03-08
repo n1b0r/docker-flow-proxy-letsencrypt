@@ -137,7 +137,7 @@ def update(version):
                     combined.write(priv.read())
                     logger.info('combined certificate generated into "{}".'.format(combined_path))
 
-                log.debug('docker {} {}'.format(docker_client, docker_client != None))
+                logger.debug('docker {} {}'.format(docker_client, docker_client != None))
                 for domain in domains.split(','):
                     
                     # generate symlinks
@@ -154,12 +154,12 @@ def update(version):
                         # for each certificate, generate a secret as it could be used by other services
                         if docker_client != None:
                             secret_name = "dfple-cert-{}.{}".format(domain, cert_extension)
-                            log.debug('creating secret {}'.format(secret_name))
+                            logger.debug('creating secret {}'.format(secret_name))
                             # store certificates as docker secrets.
                             secret = docker_client.secrets.create(
                                 name=secret_name,
                                 data=open(cert, 'rb').read())
-                            log.debug('secret created {}'.format(secret))
+                            logger.debug('secret created {}'.format(secret))
 
                     if docker_client != None:
 
@@ -172,11 +172,11 @@ def update(version):
                         if len(services) == 1 and len(secrets) == 1:
                             service = services[0]
                             secret = secrets[0]
-                            log.debug('service found: {} secret found {}'.format(service.name, secret.name))
+                            logger.debug('service found: {} secret found {}'.format(service.name, secret.name))
                             secrets.append(SecretReference(
                                 secret.id, secret.name,
                                 filename='cert-{}'.format(domain)))
-                            log.debug('updating secrets on service')
+                            logger.debug('updating secrets on service')
                             service.update(secrets=secrets)
 
                         else:
