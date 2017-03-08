@@ -10,27 +10,27 @@ test:
   stage: test
   script:
     # build image 
-    - docker build -t robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG} .
+    - docker build -t robin/docker-flow-proxy-letsencrypt:${CI_COMMIT_REF_SLUG} .
     # run test
     - docker network create -d overlay test-network-dfple
-    - rm -rf /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
-    - mkdir -p /tmp/${CI_BUILD_REF_SLUG}
-    - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
-    - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-service.yml
-    - cd /tmp/${CI_BUILD_REF_SLUG}
-    - docker stack deploy -c docker-compose.yml proxy-${CI_BUILD_REF_SLUG}
+    - rm -rf /tmp/${CI_COMMIT_REF_SLUG}/docker-compose.yml
+    - mkdir -p /tmp/${CI_COMMIT_REF_SLUG}
+    - cp tests/docker-compose.yml /tmp/${CI_COMMIT_REF_SLUG}/docker-compose.yml
+    - cp tests/docker-compose-service.yml /tmp/${CI_COMMIT_REF_SLUG}/docker-compose-service.yml
+    - cd /tmp/${CI_COMMIT_REF_SLUG}
+    - docker stack deploy -c docker-compose.yml proxy-${CI_COMMIT_REF_SLUG}
     - sleep 10
-    - docker stack deploy -c docker-compose-service.yml service-${CI_BUILD_REF_SLUG}
+    - docker stack deploy -c docker-compose-service.yml service-${CI_COMMIT_REF_SLUG}
     - sleep 30
-    - curl -k "https://${CI_BUILD_REF_SLUG}.ks2.nibor.me"
+    - curl -k "https://${CI_COMMIT_REF_SLUG}.ks2.nibor.me"
     # clean
-    - docker stack rm service-${CI_BUILD_REF_SLUG}
-    - docker stack rm proxy-${CI_BUILD_REF_SLUG}
+    - docker stack rm service-${CI_COMMIT_REF_SLUG}
+    - docker stack rm proxy-${CI_COMMIT_REF_SLUG}
     - docker network rm test-network-dfple
     # publish
-    - docker tag robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG} nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG}
+    - docker tag robin/docker-flow-proxy-letsencrypt:${CI_COMMIT_REF_SLUG} nib0r/docker-flow-proxy-letsencrypt:${CI_COMMIT_REF_SLUG}
     - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
-    - docker push nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG}
+    - docker push nib0r/docker-flow-proxy-letsencrypt:${CI_COMMIT_REF_SLUG}
   tags:
     - ks2.nibor.me
   only:
