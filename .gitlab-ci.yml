@@ -35,7 +35,7 @@ test:
     - ks2.nibor.me
   only:
     - develop
-    - feature/*
+    - /^feature/.*$/
     - master
     - tags
 
