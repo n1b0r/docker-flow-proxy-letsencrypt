@@ -185,7 +185,7 @@ def update(version):
                             secrets.append(docker.types.SecretReference(
                                 secret.id, secret.name,
                                 filename='cert-{}'.format(domain)))
-                            logger.debug('updating secrets on service')
+                            logger.debug('updating secrets on service {}: {}'.format(service.name, secrets))
                             service.update(secrets=secrets)
 
                         else:
