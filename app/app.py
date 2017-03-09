@@ -189,6 +189,7 @@ def update(version):
                                 filename='cert-{}'.format(domain)))
 
                             networks = [x['Target'][:12] for x in service.attrs['Spec']['Networks']]
+                            networks = [x['NetworkID'] for x in service.attrs['Endpoint']['VirtualIPs']]
                             logger.debug('updating secrets on service {}: {}, networks:{}'.format(service.name, secrets, networks))
                             # https://github.com/docker/docker-py/issues/1503
                             service.update(
