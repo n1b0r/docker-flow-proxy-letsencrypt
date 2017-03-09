@@ -188,11 +188,12 @@ def update(version):
                                 secret.id, secret.name,
                                 filename='cert-{}'.format(domain)))
 
-                            logger.debug('updating secrets on service {}: {}'.format(service.name, secrets))
+                            networks = [x['Target'] for x in service.attrs['Spec']['Networks']]
+                            logger.debug('updating secrets on service {}: {}, networks:{}'.format(service.name, secrets, networks))
                             # https://github.com/docker/docker-py/issues/1503
                             service.update(
                                 secrets=secrets_ref,
-                                networks=[x['Target'] for x in service.attrs['Spec']['Networks']],
+                                networks=networks,
                                 name=service.name)
 
                         else:
