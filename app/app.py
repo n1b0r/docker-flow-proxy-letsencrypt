@@ -182,12 +182,18 @@ def update(version):
                             service = services[0]
                             secret = secrets[0]
                             logger.debug('service found: {} secret found {}'.format(service.name, secret.name))
+
                             secrets_ref = []
                             secrets_ref.append(docker.types.SecretReference(
                                 secret.id, secret.name,
                                 filename='cert-{}'.format(domain)))
+
                             logger.debug('updating secrets on service {}: {}'.format(service.name, secrets))
-                            service.update(secrets=secrets_ref)
+                            # https://github.com/docker/docker-py/issues/1503
+                            service.update(
+                                secrets=secrets_ref,
+                                networks=[x['Target'] for x in service.attrs['Spec']['Networks']],
+                                name=service.name)
 
                         else:
                             logger.error('Could not find service named {} or secret named {}'.format(
