@@ -1,6 +1,9 @@
-FROM python:alpine
+FROM ubuntu:16.04
 
-RUN apk add --update certbot curl
+RUN apt-get update && apt-get install -y \
+	 certbot \
+	 curl \
+	 python-pip
 
 ENV DF_NOTIFY_CREATE_SERVICE_URL="http://proxy:8080/v1/docker-flow-proxy/reconfigure" \
 	DF_PROXY_SERVICE_BASE_URL="http://proxy:8080/v1/docker-flow-proxy" \
