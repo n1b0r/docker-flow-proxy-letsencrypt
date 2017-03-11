@@ -99,9 +99,9 @@ def acme_challenge(path):
 
 @app.route("/v<int:version>/docker-flow-proxy-letsencrypt/reconfigure")
 def update(version):
-    
+
     dfp_client = DockerFlowProxyAPIClient()
-    cerbot = CertbotClient()
+    certbot = CertbotClient()
     docker_client = None
     docker_socket_path = os.environ.get('DOCKER_SOCKET_PATH')
     logger.debug('docker_socket_path {}'.format(docker_socket_path))
@@ -124,7 +124,7 @@ def update(version):
             domains = args.get('letsencrypt.host')
             email = args.get('letsencrypt.email')
 
-            if cerbot.update_cert(domains, email):
+            if certbot.update_cert(domains, email):
                 logger.info('certificates successfully generated using certbot.')
 
                 # if multiple domains comma separated, take only the first one
