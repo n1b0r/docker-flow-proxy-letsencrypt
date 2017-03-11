@@ -183,19 +183,44 @@ def update(version):
                             secret = secrets[0]
                             logger.debug('service found: {} secret found {}'.format(service.name, secret.name))
 
-                            secrets_ref = []
-                            secrets_ref.append(docker.types.SecretReference(
-                                secret.id, secret.name,
-                                filename='cert-{}'.format(domain)))
+                            update_data = service.attrs['Spec']
 
-                            networks = [x['Target'][:12] for x in service.attrs['Spec']['Networks']]
-                            networks = [x['NetworkID'] for x in service.attrs['Endpoint']['VirtualIPs']]
-                            logger.debug('updating secrets on service {}: {}, networks:{}'.format(service.name, secrets, networks))
-                            # https://github.com/docker/docker-py/issues/1503
-                            service.update(
-                                secrets=secrets_ref,
-                                networks=networks,
-                                name=service.name)
+                            logger.debug('updating service {}: \n\t* secret:{}'.format(service.name, secret.name))
+
+                            # update secrets
+                            # secrets_ref = []
+                            # secrets_ref.append(docker.types.SecretReference(
+                            #     secret.id, secret.name,
+                            #     filename='cert-{}'.format(domain)))
+                            # # https://github.com/docker/docker-py/issues/1503
+                            # service.update(
+                            #     secrets=secrets_ref,
+                            #     name=service.name)
+
+                            # temporary workaround
+                            container_spec = update_data['TaskTemplate']['ContainerSpec']
+                            if "Secrets" not in container_spec.keys():
+                                container_spec['Secrets'] = []
+
+                            container_spec['Secrets'].append({
+                                'SecretID': secret.id,
+                                'SecretName': secret.name,
+                                'File': {
+                                    'Name': 'cert-{}'.format(domain),
+                                    'UID': '0',
+                                    'GID': '0',
+                                    'Mode': 0}})
+
+                            output, error, code = certbot.run("""curl -X POST -H "Content-Type: application/json" \
+                                --unix-socket {socket} \
+                                http:/services/{service_id}/update?version={version} \
+                                -d '{data}'""".format(
+                                    socket=docker_socket_path,
+                                    service_id=service.id,
+                                    version=service.attrs['Version']['Index'],
+                                    data=json.dumps(update_data))
+
+                            logger.debug('docker api service update: \n{}\n{}\n{}'.format(output, error, code)
 
                         else:
                             logger.error('Could not find service named {} or secret named {}'.format(
