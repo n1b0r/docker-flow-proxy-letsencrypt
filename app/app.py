@@ -68,11 +68,20 @@ class CertbotClient():
         """
         Update certifacts
         """
-        output, error, code = self.run(['certbot', "certonly --agree-tos --domains {domains} --email {email} --expand --noninteractive --webroot --webroot-path {webroot_path} --debug {options}".format(
+        output, error, code = self.run("""certbot certonly \
+                    --agree-tos \
+                    --domains {domains} \
+                    --email {email} \
+                    --expand \
+                    --noninteractive \
+                    --webroot \
+                    --webroot-path {webroot_path} \
+                    --debug \
+                    {options}""".format(
                         domains=domains,
                         email=email,
                         webroot_path=CERTBOT_WEBROOT_PATH,
-                        options=CERTBOT_OPTIONS)])
+                        options=CERTBOT_OPTIONS).split())
 
         if b'urn:acme:error:unauthorized' in error:
             logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
@@ -204,14 +213,11 @@ def update(version):
                                     'GID': '0',
                                     'Mode': 0}})
 
-                            output, error, code = certbot.run("""curl -X POST -H "Content-Type: application/json" \
-                                --unix-socket {socket} \
-                                http:/services/{service_id}/update?version={version} \
-                                -d '{data}'""".format(
-                                    socket=docker_socket_path,
-                                    service_id=service.id,
-                                    version=service.attrs['Version']['Index'],
-                                    data=json.dumps(update_data)))
+                            output, error, code = certbot.run([
+                                "curl", "-X POST", '-H "Content-Type: application/json"',
+                                '--unix-socket {socket}'.format(socket=docker_socket_path), 
+                                'http:/services/{service_id}/update?version={version}'.format(service_id=service.id, version=service.attrs['Version']['Index']),
+                                "-d '{data}'".format(data=json.dumps(update_data))])
 
                             logger.debug('docker api service update: \n{}\n{}\n{}'.format(output, error, code))
 
