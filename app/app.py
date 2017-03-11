@@ -213,13 +213,10 @@ def update(version):
                                     'GID': '0',
                                     'Mode': 0}})
 
-                            output, error, code = certbot.run([
-                                "curl", "-X POST", '-H "Content-Type: application/json"',
-                                '--unix-socket {socket}'.format(socket=docker_socket_path), 
-                                'http:/services/{service_id}/update?version={version}'.format(service_id=service.id, version=service.attrs['Version']['Index']),
-                                "-d '{data}'".format(data=json.dumps(update_data))])
+                            code = os.system("""curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/services/{service_id}/update?version={version} -d '{data}'""".format(
+                                data=json.dumps(update_data), socket=docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index']))
 
-                            logger.debug('docker api service update: \n{}\n{}\n{}'.format(output, error, code))
+                            logger.debug('docker api service update: {}'.format(code))
 
                         else:
                             logger.error('Could not find service named {} or secret named {}'.format(
