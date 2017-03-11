@@ -68,7 +68,7 @@ class CertbotClient():
         """
         Update certifacts
         """
-        output, error, code = self.run("""certbot certonly \
+        output, error, code = self.run("""letsencrypt certonly \
                     --agree-tos \
                     --domains {domains} \
                     --email {email} \
