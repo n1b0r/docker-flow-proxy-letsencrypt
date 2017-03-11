@@ -1,9 +1,8 @@
-FROM ubuntu:16.04
+FROM alpine
 
 RUN apt-get update && apt-get install -y \
-	 letsencrypt \
-	 curl \
-	 python-pip
+	 certbot \
+	 curl
 
 ENV DF_NOTIFY_CREATE_SERVICE_URL="http://proxy:8080/v1/docker-flow-proxy/reconfigure" \
 	DF_PROXY_SERVICE_BASE_URL="http://proxy:8080/v1/docker-flow-proxy" \

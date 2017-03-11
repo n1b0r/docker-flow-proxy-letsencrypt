@@ -68,7 +68,7 @@ class CertbotClient():
         """
         Update certifacts
         """
-        output, error, code = self.run("""letsencrypt certonly \
+        output, error, code = self.run("""certbot certonly \
                     --agree-tos \
                     --domains {domains} \
                     --email {email} \
@@ -213,7 +213,7 @@ def update(version):
                                     'GID': '0',
                                     'Mode': 0}})
 
-                            cmd = """curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/services/{service_id}/update?version={version} -d '{data}'""".format(
+                            cmd = """curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/1.25/services/{service_id}/update?version={version} -d '{data}'""".format(
                                 data=json.dumps(update_data), socket=docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
                             logger.debug('EXEC {}'.format(cmd))
                             code = os.system(cmd)
