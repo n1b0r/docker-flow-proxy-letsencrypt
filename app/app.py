@@ -68,7 +68,7 @@ class CertbotClient():
         """
         Update certifacts
         """
-        output, error, code = self.run("""certbot certonly \
+        output, error, code = self.run(['certbot', """certonly \
                     --agree-tos \
                     --domains {domains} \
                     --email {email} \
@@ -81,7 +81,7 @@ class CertbotClient():
                         domains=domains,
                         email=email,
                         webroot_path=CERTBOT_WEBROOT_PATH,
-                        options=CERTBOT_OPTIONS))
+                        options=CERTBOT_OPTIONS)])
 
         if b'urn:acme:error:unauthorized' in error:
             logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
