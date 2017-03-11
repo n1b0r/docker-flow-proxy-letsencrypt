@@ -218,7 +218,7 @@ def update(version):
                                     socket=docker_socket_path,
                                     service_id=service.id,
                                     version=service.attrs['Version']['Index'],
-                                    data=json.dumps(update_data))
+                                    data=json.dumps(update_data)))
 
                             logger.debug('docker api service update: \n{}\n{}\n{}'.format(output, error, code)
 
