@@ -213,8 +213,10 @@ def update(version):
                                     'GID': '0',
                                     'Mode': 0}})
 
-                            code = os.system("""curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/services/{service_id}/update?version={version} -d '{data}'""".format(
-                                data=json.dumps(update_data), socket=docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index']))
+                            cmd = """curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/services/{service_id}/update?version={version} -d '{data}'""".format(
+                                data=json.dumps(update_data), socket=docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
+                            logger.debug('EXEC {}'.format(cmd))
+                            code = os.system(cmd)
 
                             logger.debug('docker api service update: {}'.format(code))
 
