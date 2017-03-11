@@ -1,4 +1,4 @@
-FROM alpine
+FROM python:alpine
 
 RUN apk add --update \
 	 certbot \
