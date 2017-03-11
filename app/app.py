@@ -220,7 +220,7 @@ def update(version):
                                     version=service.attrs['Version']['Index'],
                                     data=json.dumps(update_data)))
 
-                            logger.debug('docker api service update: \n{}\n{}\n{}'.format(output, error, code)
+                            logger.debug('docker api service update: \n{}\n{}\n{}'.format(output, error, code))
 
                         else:
                             logger.error('Could not find service named {} or secret named {}'.format(
