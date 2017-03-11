@@ -51,8 +51,9 @@ class CertbotClient():
         pass
 
     def run(self, cmd):
-        logger.debug('executing cmd : {}'.format(cmd.split()))
-        process = subprocess.Popen(cmd.split(),
+        # cmd = cmd.split()
+        logger.debug('executing cmd : {}'.format(cmd))
+        process = subprocess.Popen(cmd,
                                    stdout=subprocess.PIPE, 
                                    stderr=subprocess.PIPE)
         output, error = process.communicate()
