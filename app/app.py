@@ -68,16 +68,7 @@ class CertbotClient():
         """
         Update certifacts
         """
-        output, error, code = self.run(['certbot', """certonly \
-                    --agree-tos \
-                    --domains {domains} \
-                    --email {email} \
-                    --expand \
-                    --noninteractive \
-                    --webroot \
-                    --webroot-path {webroot_path} \
-                    --debug \
-                    {options}""".format(
+        output, error, code = self.run(['certbot', "certonly --agree-tos --domains {domains} --email {email} --expand --noninteractive --webroot --webroot-path {webroot_path} --debug {options}".format(
                         domains=domains,
                         email=email,
                         webroot_path=CERTBOT_WEBROOT_PATH,
