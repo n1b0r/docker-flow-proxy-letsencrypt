@@ -1,6 +1,6 @@
 FROM alpine
 
-RUN add --update \
+RUN apk add --update \
 	 certbot \
 	 curl
 
