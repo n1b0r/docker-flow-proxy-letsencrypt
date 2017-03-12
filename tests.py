@@ -166,8 +166,8 @@ class DFPLETestCase(TestCase):
 			'labels': {
 		        "com.df.notify": "true",
 		        "com.df.distribute": "true",
-		        "com.df.serviceDomain": "{}.ks2.nibor.me,{}2.ks2.nibor.me".format(self.test_name),
-		        "com.df.letsencrypt.host": "{}.ks2.nibor.me,{}2.ks2.nibor.me".format(self.test_name),
+		        "com.df.serviceDomain": "{0}.ks2.nibor.me,{0}2.ks2.nibor.me".format(self.test_name),
+		        "com.df.letsencrypt.host": "{0}.ks2.nibor.me,{0}2.ks2.nibor.me".format(self.test_name),
 		        "com.df.letsencrypt.email": "test@test.com",
 		        "com.df.servicePath": "/",
 		        "com.df.srcPort": "443",
