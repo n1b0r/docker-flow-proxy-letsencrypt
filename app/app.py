@@ -221,7 +221,7 @@ def update(version):
                         # for each certificate, generate a secret as it could be used by other services
                         if docker_client != None:
 
-                            secret = DFPLE.secret_create('dfple-cert-{}.{}'.format(domain, cert_extension), open(dest_file, 'rb').read(dest_file))
+                            secret = DFPLE.secret_create('dfple-cert-{}.{}'.format(domain, cert_extension), open(dest_file, 'rb').read())
                             service_secrets.append(secret)
 
                     if docker_client == None:
