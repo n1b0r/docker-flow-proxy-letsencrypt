@@ -21,9 +21,11 @@ class DFPLETestCase(TestCase):
 		self.docker_client = docker.DockerClient(
 			base_url='unix://var/run/docker.sock')
 
-
-		self.docker_client.swarm.init()
-
+		try:
+			self.docker_client.swarm.init()
+		except docker.errors.APIError:
+			pass
+			
 		# docker network
 		self.network_name = "test-network-dfple"
 		self.network = self.docker_client.networks.create(name=self.network_name, driver='overlay')
@@ -119,7 +121,6 @@ class DFPLETestCase(TestCase):
 			_current = time.time()
 
 		return False
-
 
 	def test_one_domain(self):
 		import requests
