@@ -25,7 +25,7 @@ class DFPLETestCase(TestCase):
 			self.docker_client.swarm.init()
 		except docker.errors.APIError:
 			pass
-			
+
 		# docker network
 		self.network_name = "test-network-dfple"
 		self.network = self.docker_client.networks.create(name=self.network_name, driver='overlay')
@@ -94,6 +94,11 @@ class DFPLETestCase(TestCase):
 		self.dfple_service = self.docker_client.services.create(**dfple_service)
 		self.services.append(self.dfple_service)
 
+		# wait until proxy_le service has registered routes
+		self.assertTrue(
+			self.wait_until_found_in_config('proxy_le_{}'.format(self.test_name)),
+			"docker-flow-proxy-letsencrypt service not registered.")
+
 	def tearDown(self):
 
 		for service in self.services:
@@ -123,14 +128,6 @@ class DFPLETestCase(TestCase):
 		return False
 
 	def test_one_domain(self):
-		import requests
-		import time
-		import json
-
-		# wait until proxy_le service has registered routes
-		self.assertTrue(
-			self.wait_until_found_in_config('proxy_le_{}'.format(self.test_name)),
-			"docker-flow-proxy-letsencrypt service not registered.")
 
 		# start the testing service
 		test_service = {
@@ -151,35 +148,12 @@ class DFPLETestCase(TestCase):
 		service = self.docker_client.services.create(**test_service)
 		self.services.append(service)
 
-		# wait until proxy_le service has registered routes
+		# wait until service has registered routes
 		self.assertTrue(
 			self.wait_until_found_in_config('test_service_{}'.format(self.test_name)),
 			"test service not registered.")
 
-		# # wait until proxy_le service has registered routes
-		# self.assertTrue(
-		# 	self.wait_until_found_in_config('test_service_{}'.format(self.test_name)),
-		# 	"test service not registered.")
+		# check cert is used
+		self.assertTrue(
+			self.wait_until_found_in_config('ssl crt /certs/{}.ks2.nibor.me.pem'.format(self.test_name)))
 
-		# i=0
-		# while i < 5:
-		# 	i += 1
-		# 	container = self.docker_client.containers.list(filters={'name': 'proxy_le_{}'.format(self.test_name)})
-		# 	if container:
-		# 		print container
-		# 		container = container[0]
-		# 		print(json.dumps(container.attrs, indent=4))
-		# 	else:
-		# 		print('no container found')
-		# 	time.sleep(2)
-
-		# wait services to be up
-		# time.sleep(10)
-
-		# domain_acl = 'acl'
-		# proxy_config = requests.get('http://localhost:8080/v1/docker-flow-proxy/config').text
-		# self.assertNotIn(domain_acl, proxy_config)
-
-
-
-		assert False
