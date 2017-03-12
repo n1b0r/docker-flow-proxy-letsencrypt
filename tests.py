@@ -16,7 +16,7 @@ class DFPLETestCase(TestCase):
 		  * DFP + DFPLE
 		  * client service requesting certificates
 		"""
-
+		time.sleep(5)
 		self.test_name = os.environ.get('CI_BUILD_REF_SLUG', 'test')
 		self.docker_client = docker.DockerClient(
 			base_url='unix://var/run/docker.sock')
