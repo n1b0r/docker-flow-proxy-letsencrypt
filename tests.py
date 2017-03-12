@@ -157,3 +157,36 @@ class DFPLETestCase(TestCase):
 		self.assertTrue(
 			self.wait_until_found_in_config('ssl crt /certs/{}.ks2.nibor.me.pem'.format(self.test_name)))
 
+	def test_multiple_domains(self):
+
+		# start the testing service
+		test_service = {
+			'name': 'test_service_{}'.format(self.test_name),
+			'image': 'jwilder/whoami',
+			'labels': {
+		        "com.df.notify": "true",
+		        "com.df.distribute": "true",
+		        "com.df.serviceDomain": "{}.ks2.nibor.me,{}2.ks2.nibor.me".format(self.test_name),
+		        "com.df.letsencrypt.host": "{}.ks2.nibor.me,{}2.ks2.nibor.me".format(self.test_name),
+		        "com.df.letsencrypt.email": "test@test.com",
+		        "com.df.servicePath": "/",
+		        "com.df.srcPort": "443",
+		        "com.df.port": "8000",
+			},
+			'networks': [self.network_name]
+		}
+		service = self.docker_client.services.create(**test_service)
+		self.services.append(service)
+
+		# wait until service has registered routes
+		self.assertTrue(
+			self.wait_until_found_in_config('test_service_{}'.format(self.test_name)),
+			"test service not registered.")
+
+		# check cert is used
+		self.assertTrue(
+			self.wait_until_found_in_config('ssl crt /certs/{}.ks2.nibor.me.pem'.format(self.test_name)))
+		# check cert is used
+		self.assertTrue(
+			self.wait_until_found_in_config('ssl crt /certs/{}2.ks2.nibor.me.pem'.format(self.test_name)))
+
