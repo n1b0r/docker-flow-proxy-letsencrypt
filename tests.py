@@ -226,7 +226,7 @@ class DFPLESecret(DFPLETestCase, Scenario):
         		"com.df.servicePath": "/.well-known/acme-challenge",
         		"com.df.port": "8080",
 			},
-			'networks': [self.network_name]
+			'networks': [self.network_name],
 			'mounts': ['/var/run/docker.sock:/var/run/docker.sock:rw'],
 		}
 
