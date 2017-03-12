@@ -22,7 +22,7 @@ class DFPLETestCase(TestCase):
 			base_url='unix://var/run/docker.sock')
 
 
-		# self.docker_client.swarm.init()
+		self.docker_client.swarm.init()
 
 		# docker network
 		self.network_name = "test-network-dfple"
@@ -154,6 +154,11 @@ class DFPLETestCase(TestCase):
 		self.assertTrue(
 			self.wait_until_found_in_config('test_service_{}'.format(self.test_name)),
 			"test service not registered.")
+
+		# # wait until proxy_le service has registered routes
+		# self.assertTrue(
+		# 	self.wait_until_found_in_config('test_service_{}'.format(self.test_name)),
+		# 	"test service not registered.")
 
 		# i=0
 		# while i < 5:
