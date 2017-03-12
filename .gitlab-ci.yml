@@ -6,15 +6,47 @@ stages:
   - test
   - release
 
-test:
-  stage: test
 
+.test_step: &test_step
   before_script:
-    - mkvirtualenv dfple-test-${CI_BUILD_REF_SLUG}
-    - workon dfple-test-${CI_BUILD_REF_SLUG}
-  script:
-    - pip install -r requirements-test.txt
-    - pytest tests.py
+    - docker build -t robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG} .
+    - mkdir -p /tmp/${CI_BUILD_REF_SLUG}
+    - rm -rf /tmp/${CI_BUILD_REF_SLUG}/
+    - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-service.yml
+    - cp tests/docker-compose-secrets.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-secrets.yml
+    - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
+    - cd /tmp/${CI_BUILD_REF_SLUG}
+    - docker network create -d overlay test-network-dfple
+  after_script:
+    - docker stack rm service-${CI_BUILD_REF_SLUG} proxy-${CI_BUILD_REF_SLUG}
+    - docker network rm test-network-dfple
+
+test_secrets:
+  stage: test
+  <<: *test_step
+  script:    
+    - docker stack deploy -c docker-compose-secrets.yml proxy-${CI_BUILD_REF_SLUG}
+    - sleep 10
+    - docker stack deploy -c docker-compose-service.yml service-${CI_BUILD_REF_SLUG}
+    - sleep 30
+    - curl -k "https://${CI_BUILD_REF_SLUG}.ks2.nibor.me"
+  tags:
+    - ks2.nibor.me
+  only:
+    - develop
+    - /^feature-.*$/
+    - master
+    - tags
+
+test_original:
+  stage: test
+  <<: *test_step
+  script:    
+    - docker stack deploy -c docker-compose.yml proxy-${CI_BUILD_REF_SLUG}
+    - sleep 10
+    - docker stack deploy -c docker-compose-service.yml service-${CI_BUILD_REF_SLUG}
+    - sleep 30
+    - curl -k "https://${CI_BUILD_REF_SLUG}.ks2.nibor.me"
   tags:
     - ks2.nibor.me
   only:
