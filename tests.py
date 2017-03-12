@@ -183,10 +183,7 @@ class DFPLETestCase(TestCase):
 			self.wait_until_found_in_config('test_service_{}'.format(self.test_name)),
 			"test service not registered.")
 
-		# check cert is used
+		# check certs are used
 		self.assertTrue(
-			self.wait_until_found_in_config('ssl crt /certs/{}.ks2.nibor.me.pem'.format(self.test_name)))
-		# check cert is used
-		self.assertTrue(
-			self.wait_until_found_in_config('ssl crt /certs/{}2.ks2.nibor.me.pem'.format(self.test_name)))
+			self.wait_until_found_in_config('ssl crt /certs/{0}.ks2.nibor.me.pem crt /certs/{0}2.ks2.nibor.me.pem'.format(self.test_name)))
 
