@@ -11,7 +11,6 @@ stages:
   before_script:
     - docker build -t robin/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_SLUG} .
     - mkdir -p /tmp/${CI_BUILD_REF_SLUG}
-    - rm -rf /tmp/${CI_BUILD_REF_SLUG}/
     - cp tests/docker-compose-service.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-service.yml
     - cp tests/docker-compose-secrets.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose-secrets.yml
     - cp tests/docker-compose.yml /tmp/${CI_BUILD_REF_SLUG}/docker-compose.yml
@@ -21,6 +20,7 @@ stages:
     - docker stack rm service-${CI_BUILD_REF_SLUG}
     - docker stack rm proxy-${CI_BUILD_REF_SLUG}
     - docker network rm test-network-dfple
+    - rm -rf /tmp/${CI_BUILD_REF_SLUG}/
 
 test_secrets:
   stage: test
