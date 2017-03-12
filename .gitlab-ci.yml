@@ -18,7 +18,8 @@ stages:
     - cd /tmp/${CI_BUILD_REF_SLUG}
     - docker network create -d overlay test-network-dfple
   after_script:
-    - docker stack rm service-${CI_BUILD_REF_SLUG} proxy-${CI_BUILD_REF_SLUG}
+    - docker stack rm service-${CI_BUILD_REF_SLUG}
+    - docker stack rm proxy-${CI_BUILD_REF_SLUG}
     - docker network rm test-network-dfple
 
 test_secrets:
