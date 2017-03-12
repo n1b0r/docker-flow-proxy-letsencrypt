@@ -6,4 +6,5 @@ services:
   - docker
 
 script:
-- pip install tzerzrze
+- pip install -r requirements-test.txt
+- pytest tests.py
