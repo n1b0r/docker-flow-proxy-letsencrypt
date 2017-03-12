@@ -58,31 +58,7 @@ class DFPLETestCase(TestCase):
 			'networks': [self.network_name]
 		}
 		
-		# docker-flow-proxy-letsencrypt service
-		dfple_image = self.docker_client.images.build(
-			path=os.path.dirname(os.path.abspath(__file__)),
-			tag='robin/docker-flow-proxy-letsencrypt:{}'.format(self.test_name),
-			quiet=False)
-		dfple_service = {
-			'name': 'proxy_le_{}'.format(self.test_name),
-			'image': 'robin/docker-flow-proxy-letsencrypt:{}'.format(self.test_name),
-			'constraints': ["node.role == manager"],
-			'env': [
-      			"DF_PROXY_SERVICE_NAME=proxy_{}".format(self.test_name),
-      			"CERTBOT_OPTIONS=--staging",
-      			"LOG=debug",
-			],
-			'labels': {
-        		"com.df.notify": "true",
-        		"com.df.distribute": "true",
-        		"com.df.servicePath": "/.well-known/acme-challenge",
-        		"com.df.port": "8080",
-			},
-			'networks': [self.network_name]
-		}
-
 		# start services
-		# self.dfp_service = self.docker_client.services.create(**dfp_service)
 		self.services = []
 		
 		self.dfp_service = self.docker_client.services.create(**dfp_service)
@@ -91,13 +67,6 @@ class DFPLETestCase(TestCase):
 		self.dfsl_service = self.docker_client.services.create(**dfsl_service)
 		self.services.append(self.dfsl_service)
 
-		self.dfple_service = self.docker_client.services.create(**dfple_service)
-		self.services.append(self.dfple_service)
-
-		# wait until proxy_le service has registered routes
-		self.assertTrue(
-			self.wait_until_found_in_config('proxy_le_{}'.format(self.test_name)),
-			"docker-flow-proxy-letsencrypt service not registered.")
 
 	def tearDown(self):
 
@@ -126,6 +95,9 @@ class DFPLETestCase(TestCase):
 			_current = time.time()
 
 		return False
+
+
+class Scenario():
 
 	def test_one_domain(self):
 
@@ -187,3 +159,41 @@ class DFPLETestCase(TestCase):
 		self.assertTrue(
 			self.wait_until_found_in_config('ssl crt /certs/{0}.ks2.nibor.me.pem crt /certs/{0}2.ks2.nibor.me.pem'.format(self.test_name)))
 
+
+class DFPLEOriginal(DFPLETestCase, Scenario):
+
+
+	def setUp(self):
+
+		super(DFPLEOriginal, self).setUp()
+
+		# docker-flow-proxy-letsencrypt service
+		dfple_image = self.docker_client.images.build(
+			path=os.path.dirname(os.path.abspath(__file__)),
+			tag='robin/docker-flow-proxy-letsencrypt:{}'.format(self.test_name),
+			quiet=False)
+		dfple_service = {
+			'name': 'proxy_le_{}'.format(self.test_name),
+			'image': 'robin/docker-flow-proxy-letsencrypt:{}'.format(self.test_name),
+			'constraints': ["node.role == manager"],
+			'env': [
+      			"DF_PROXY_SERVICE_NAME=proxy_{}".format(self.test_name),
+      			"CERTBOT_OPTIONS=--staging",
+      			"LOG=debug",
+			],
+			'labels': {
+        		"com.df.notify": "true",
+        		"com.df.distribute": "true",
+        		"com.df.servicePath": "/.well-known/acme-challenge",
+        		"com.df.port": "8080",
+			},
+			'networks': [self.network_name]
+		}
+
+		self.dfple_service = self.docker_client.services.create(**dfple_service)
+		self.services.append(self.dfple_service)
+
+		# wait until proxy_le service has registered routes
+		self.assertTrue(
+			self.wait_until_found_in_config('proxy_le_{}'.format(self.test_name)),
+			"docker-flow-proxy-letsencrypt service not registered.")
