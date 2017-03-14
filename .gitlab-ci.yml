@@ -9,6 +9,7 @@ stages:
 test:
   stage: test
   script: 
+    - workon dfple
     - pytest tests.py
   tags:
     - ks2.nibor.me
