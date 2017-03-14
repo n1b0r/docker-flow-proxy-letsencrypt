@@ -110,7 +110,7 @@ class DFPLE():
     def service_update_secrets(cls, service, secrets):
 
         spec = service.attrs['Spec']
-        container_spec = update_data['TaskTemplate']['ContainerSpec']
+        container_spec = spec['TaskTemplate']['ContainerSpec']
 
         if "Secrets" in container_spec.keys():
             # keep secrets that are not matching aliases
@@ -131,7 +131,7 @@ class DFPLE():
         container_spec['Secrets'] = secrets
 
         cmd = """curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/1.25/services/{service_id}/update?version={version} -d '{data}'""".format(
-            data=json.dumps(update_data), socket=docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
+            data=json.dumps(spec), socket=docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
         logger.debug('EXEC {}'.format(cmd))
         code = os.system(cmd)
      
