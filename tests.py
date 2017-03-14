@@ -263,6 +263,6 @@ class DFPLESecret(DFPLETestCase, Scenario):
 		super(DFPLESecret, self).test_one_domain()
 
 		# check secrets
-		service = self.docker_client.services.get(self.dfple_service.id)
+		service = self.docker_client.services.get(self.dfp_service.id)
 		secret_aliases = [x['File']['Name'] for x in service.attrs['Spec']['TaskTemplate']['ContainerSpec']['Secrets']]
 		self.assertIn('cert-{}.ks2.nibor.me.pem'.format(self.test_name), secret_aliases)
