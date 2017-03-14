@@ -164,9 +164,10 @@ class Scenario():
 			certs_path = "/run/secrets/cert-"
 
 
-		print('WAINTING FOR', 'ssl crt {1}/{0}.ks2.nibor.me.pem crt {1}/{0}2.ks2.nibor.me.pem'.format(self.test_name, certs_path))
+		m = 'ssl crt {1}{0}.ks2.nibor.me.pem crt {1}/{0}2.ks2.nibor.me.pem'.format(self.test_name, certs_path)
+		print('WAINTING FOR', m)
 		self.assertTrue(
-			self.wait_until_found_in_config('ssl crt {1}{0}.ks2.nibor.me.pem crt {1}/{0}2.ks2.nibor.me.pem'.format(self.test_name, certs_path)))
+			self.wait_until_found_in_config(m))
 
 
 class DFPLEOriginal(DFPLETestCase, Scenario):
