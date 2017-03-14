@@ -114,12 +114,12 @@ class DFPLE():
 
         if "Secrets" in container_spec.keys():
             # keep secrets that are not matching aliases
-            secrets = [x for x in container_spec['Secrets'] if not any([x['File']['Name'] == a for a in secrets.keys()])]
+            s = [x for x in container_spec['Secrets'] if not any([x['File']['Name'] == a for a in secrets.keys()])]
         else:
-            secrets = []
+            s = []
 
         for alias, secret in secrets.items():
-            secrets.append({
+            s.append({
                 'SecretID': secret.id,
                 'SecretName': secret.name,
                 'File': {
@@ -128,7 +128,7 @@ class DFPLE():
                     'GID': '0',
                     'Mode': 0}})
 
-        container_spec['Secrets'] = secrets
+        container_spec['Secrets'] = s
 
         cmd = """curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/1.25/services/{service_id}/update?version={version} -d '{data}'""".format(
             data=json.dumps(spec), socket=docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
