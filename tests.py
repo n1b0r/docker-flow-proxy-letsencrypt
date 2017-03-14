@@ -165,7 +165,7 @@ class Scenario():
 			certs_path = "/run/secrets/cert-"
 			ext = ''
 
-		m = 'ssl crt {1}{0}.ks2.nibor.me{2} crt {1}/{0}2.ks2.nibor.me{2}'.format(self.test_name, certs_path, ext)
+		m = 'ssl crt {1}{0}.ks2.nibor.me{2} crt {1}{0}2.ks2.nibor.me{2}'.format(self.test_name, certs_path, ext)
 		print('WAINTING FOR', m)
 		self.assertTrue(
 			self.wait_until_found_in_config(m))
