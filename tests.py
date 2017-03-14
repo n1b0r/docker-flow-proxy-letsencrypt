@@ -84,7 +84,7 @@ class DFPLETestCase(TestCase):
 			print('Error while getting config: {}'.format(e))
 			return False
 
-	def wait_until_found_in_config(self, text, timeout=30):
+	def wait_until_found_in_config(self, text, timeout=60):
 
 		_start = time.time()
 		_current = time.time()
