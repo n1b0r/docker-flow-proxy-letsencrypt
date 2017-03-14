@@ -150,7 +150,7 @@ class DFPLE():
         logger.debug('secret created {}'.format(secret.id))
 
     @classmethod
-    def service_get(service_name):
+    def service_get(cls, service_name):
         services = docker_client.services.list(
             filters={'name': service_name})
         services = [x for x in services if x.name == service_name]
