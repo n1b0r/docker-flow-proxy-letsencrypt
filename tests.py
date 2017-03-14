@@ -77,7 +77,7 @@ class DFPLETestCase(TestCase):
 
 	def config_match(self, text):
 		try:
-			conf = requests.get('http://localhost:8080/v1/docker-flow-proxy/config').text
+			conf = requests.get('http://localhost:8080/v1/docker-flow-proxy/config', timeout=3).text
 			print('CONF', conf)
 			return text in conf
 		except Exception, e:
@@ -89,7 +89,7 @@ class DFPLETestCase(TestCase):
 		_start = time.time()
 		_current = time.time()
 		while _current < _start + timeout:
-			print('<< while')
+			print('<< while', _current)
 			if self.config_match(text):
 				print('<< found')
 				return True
