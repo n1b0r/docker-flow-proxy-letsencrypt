@@ -108,7 +108,7 @@ class DFPLE():
 
     @classmethod    
     def service_update_secrets(cls, service, secrets):
-
+        
         spec = service.attrs['Spec']
         container_spec = spec['TaskTemplate']['ContainerSpec']
 
@@ -211,7 +211,9 @@ def update(version):
                     ('combined', 'pem'),
                     ('fullchain', 'crt'),
                     ('privkey', 'key')]
-                for domain in domains.split(','):
+
+                domains = domains.split(',')
+                for domain in domains:
                     
                     # generate symlinks
                     for cert_type, cert_extension in cert_types:
@@ -249,7 +251,7 @@ def update(version):
                     if service:
                         aliases = {}
                         for d in domains:
-                            aliases.update({'cert-{}'.format(d): [ x for x in service_secrets if x.name.startswith('dfple-cert-{}.pem'.format(domain))][0]})
+                            aliases.update({'cert-{}'.format(d): [ x for x in service_secrets if x.name.startswith('dfple-cert-{}.pem'.format(d))][0]})
                         DFPLE.service_update_secrets(service, aliases)
                     else:
                         logger.error('Could not find service named {}'.format(
