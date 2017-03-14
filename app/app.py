@@ -23,6 +23,17 @@ CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
 CERTBOT_OPTIONS = os.environ.get('CERTBOT_OPTIONS', '')
 CERTBOT_FOLDER = "/etc/letsencrypt/"
 
+docker_client = None
+docker_socket_path = os.environ.get('DOCKER_SOCKET_PATH')
+logger.debug('docker_socket_path {}'.format(docker_socket_path))
+if docker_socket_path and os.path.exists(docker_socket_path):
+    docker_client = docker.DockerClient(
+        base_url='unix:/{}'.format(docker_socket_path),
+        version='1.25')
+
+
+
+
 class DockerFlowProxyAPIClient:
     def __init__(self, DF_PROXY_SERVICE_BASE_URL=None, adaptor=None):
         self.base_url = DF_PROXY_SERVICE_BASE_URL
@@ -161,14 +172,7 @@ def update(version):
 
     dfp_client = DockerFlowProxyAPIClient()
     certbot = CertbotClient()
-    docker_client = None
-    docker_socket_path = os.environ.get('DOCKER_SOCKET_PATH')
-    logger.debug('docker_socket_path {}'.format(docker_socket_path))
-    if docker_socket_path and os.path.exists(docker_socket_path):
-        docker_client = docker.DockerClient(
-            base_url='unix:/{}'.format(docker_socket_path),
-            version='1.25')
-
+    
     if version == 1:
 
         args = request.args
