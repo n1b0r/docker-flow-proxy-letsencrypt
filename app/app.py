@@ -149,6 +149,7 @@ class DFPLE():
             data=secret_data)
         logger.debug('secret created {}'.format(secret.id))
 
+        secret = docker_client.secrets().get(secret.id)
         return secret
 
     @classmethod
