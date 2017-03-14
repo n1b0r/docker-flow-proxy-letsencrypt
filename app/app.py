@@ -149,6 +149,8 @@ class DFPLE():
             data=secret_data)
         logger.debug('secret created {}'.format(secret.id))
 
+        return secret
+
     @classmethod
     def service_get(cls, service_name):
         services = docker_client.services.list(
