@@ -159,14 +159,14 @@ class Scenario():
 			"test service not registered.")
 
 		# check certs are used
-		certs_path = "/certs"
+		certs_path = "/certs/"
 		if isinstance(self, DFPLESecret):
-			certs_path = "/run/secrets"
+			certs_path = "/run/secrets/cert-"
 
 
 		print('WAINTING FOR', 'ssl crt {1}/{0}.ks2.nibor.me.pem crt {1}/{0}2.ks2.nibor.me.pem'.format(self.test_name, certs_path))
 		self.assertTrue(
-			self.wait_until_found_in_config('ssl crt {1}/{0}.ks2.nibor.me.pem crt {1}/{0}2.ks2.nibor.me.pem'.format(self.test_name, certs_path)))
+			self.wait_until_found_in_config('ssl crt {1}{0}.ks2.nibor.me.pem crt {1}/{0}2.ks2.nibor.me.pem'.format(self.test_name, certs_path)))
 
 
 class DFPLEOriginal(DFPLETestCase, Scenario):
