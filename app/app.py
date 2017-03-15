@@ -253,7 +253,7 @@ def update(version):
                     if service:
                         aliases = {}
                         for d in domains:
-                            aliases.update({'cert-{}'.format(d): [ x for x in service_secrets if x.name.startswith('dfple-cert-{}.pem'.format(d))][0]})
+                            aliases.update({'cert-{}'.format(d): [ x for x in service_secrets if x.name.startswith('cert-{}.pem'.format(d[-44:]))][0]})
                         DFPLE.service_update_secrets(service, aliases)
                     else:
                         logger.error('Could not find service named {}'.format(
