@@ -140,7 +140,7 @@ class DFPLE():
 
         # search for already existing secrets
         s = docker_client.secrets().list(filters={'name': secret_name})
-        secret_name = "{}{}".format(secret_name, '-{}'.format(len(s)) if len(s) else '')
+        secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
 
         # create secret.
         logger.debug('creating secret {}'.format(secret_name))
