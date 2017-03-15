@@ -141,7 +141,8 @@ class DFPLE():
 
         # search for already existing secrets
         s = docker_client.secrets().list(filters={'name': secret_name})
-        secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y-%m-%d-%H-%M-%S"))
+        secret_name = 'cert-' + secret_name[-44:]
+        secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
         # create secret.
         logger.debug('creating secret {}'.format(secret_name))
@@ -231,7 +232,7 @@ def update(version):
                         # for each certificate, generate a secret as it could be used by other services
                         if docker_client != None:
 
-                            secret = DFPLE.secret_create('dfple-cert-{}.{}'.format(domain, cert_extension), open(dest_file, 'rb').read())
+                            secret = DFPLE.secret_create('{}.{}'.format(domain, cert_extension), open(dest_file, 'rb').read())
                             service_secrets.append(secret)
 
                     if docker_client == None:
