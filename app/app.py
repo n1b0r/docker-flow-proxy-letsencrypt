@@ -107,8 +107,8 @@ class CertbotClient():
 
 class DFPLE():
 
-    # cert-XXX-DDMMYY-HHMMSS
-    size_secret = 64 - 5 - 13
+    # cert-XXX-YYYYMMDD-HHMMSS
+    size_secret = 64 - 5 - 16
 
     @classmethod    
     def service_update_secrets(cls, service, secrets):
