@@ -16,10 +16,10 @@ class DFPLETestCase(TestCase):
 		  * DFP + DFPLE
 		  * client service requesting certificates
 		"""
-		time.sleep(5)
+		time.sleep(10)
 		self.test_name = os.environ.get('CI_BUILD_REF_SLUG', 'test')
-		self.docker_client = docker.DockerClient(
-			base_url='unix://var/run/docker.sock')
+		self.docker_client = docker.from_env()
+		self.base_domain = 'tt.test.dfple.nibor.me'
 
 		try:
 			self.docker_client.swarm.init()
@@ -77,15 +77,15 @@ class DFPLETestCase(TestCase):
 
 	def config_match(self, text):
 		try:
-			conf = requests.get('http://localhost:8080/v1/docker-flow-proxy/config', timeout=3).text
+			conf = requests.get('http://{}:8080/v1/docker-flow-proxy/config'.format(self.base_domain), timeout=3).text
 			print('CONF', conf)
 			return text in conf
 		except Exception, e:
-			print('Error while getting config: {}'.format(e))
+			print('Error while getting config on {}: {}'.format(self.base_domain, e))
 			return False
 
-	def wait_until_found_in_config(self, text, timeout=30):
-
+	def wait_until_found_in_config(self, text, timeout=60):
+		print('WAITING FOR', text)
 		_start = time.time()
 		_current = time.time()
 		while _current < _start + timeout:
@@ -111,8 +111,8 @@ class Scenario():
 			'labels': {
 		        "com.df.notify": "true",
 		        "com.df.distribute": "true",
-		        "com.df.serviceDomain": "{}.ks2.nibor.me".format(self.test_name),
-		        "com.df.letsencrypt.host": "{}.ks2.nibor.me".format(self.test_name),
+		        "com.df.serviceDomain": "{}.{}".format(self.test_name, self.base_domain),
+		        "com.df.letsencrypt.host": "{}.{}".format(self.test_name, self.base_domain),
 		        "com.df.letsencrypt.email": "test@test.com",
 		        "com.df.servicePath": "/",
 		        "com.df.srcPort": "443",
@@ -135,7 +135,7 @@ class Scenario():
 			certs_path = "/run/secrets/cert-"
 			ext = ''
 
-		m = 'ssl crt {1}{0}.ks2.nibor.me{2}'.format(self.test_name, certs_path, ext)
+		m = 'ssl crt {1}{0}.{3}{2}'.format(self.test_name, certs_path, ext, self.base_domain)
 		print('WAINTING FOR', m)
 		self.assertTrue(
 			self.wait_until_found_in_config(m))
@@ -150,8 +150,8 @@ class Scenario():
 			'labels': {
 		        "com.df.notify": "true",
 		        "com.df.distribute": "true",
-		        "com.df.serviceDomain": "{0}.ks2.nibor.me,{0}2.ks2.nibor.me".format(self.test_name),
-		        "com.df.letsencrypt.host": "{0}.ks2.nibor.me,{0}2.ks2.nibor.me".format(self.test_name),
+		        "com.df.serviceDomain": "{0}.{1},{0}2.{1}".format(self.test_name, self.base_domain),
+		        "com.df.letsencrypt.host": "{0}.{1},{0}2.{1}".format(self.test_name, self.base_domain),
 		        "com.df.letsencrypt.email": "test@test.com",
 		        "com.df.servicePath": "/",
 		        "com.df.srcPort": "443",
@@ -174,7 +174,7 @@ class Scenario():
 			certs_path = "/run/secrets/cert-"
 			ext = ''
 
-		m = 'ssl crt {1}{0}.ks2.nibor.me{2} crt {1}{0}2.ks2.nibor.me{2}'.format(self.test_name, certs_path, ext)
+		m = 'ssl crt {1}{0}.{3}{2} crt {1}{0}2.{3}{2}'.format(self.test_name, certs_path, ext, self.base_domain)
 		print('WAINTING FOR', m)
 		self.assertTrue(
 			self.wait_until_found_in_config(m))
@@ -265,4 +265,4 @@ class DFPLESecret(DFPLETestCase, Scenario):
 		# check secrets
 		service = self.docker_client.services.get(self.dfp_service.id)
 		secret_aliases = [x['File']['Name'] for x in service.attrs['Spec']['TaskTemplate']['ContainerSpec']['Secrets']]
-		self.assertIn('cert-{}.ks2.nibor.me'.format(self.test_name), secret_aliases)
+		self.assertIn('cert-{}.{}'.format(self.test_name, self.base_domain), secret_aliases)

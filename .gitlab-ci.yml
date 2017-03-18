@@ -8,7 +8,7 @@ stages:
 
 test:
   stage: test
-  script: 
+  script:
     - pytest tests.py
   tags:
     - ks2.nibor.me
