@@ -107,6 +107,9 @@ class CertbotClient():
 
 class DFPLE():
 
+    # cert-XXX-DDMMYY-HHMMSS
+    size_secret = 64 - 5 - 13
+
     @classmethod    
     def service_update_secrets(cls, service, secrets):
         
@@ -141,7 +144,7 @@ class DFPLE():
 
         # search for already existing secrets
         s = docker_client.secrets().list(filters={'name': secret_name})
-        secret_name = 'cert-' + secret_name[-44:]
+        secret_name = 'cert-' + secret_name[-cls.size_secret:]
         secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
 
         # create secret.
@@ -253,7 +256,7 @@ def update(version):
                     if service:
                         aliases = {}
                         for d in domains:
-                            aliases.update({'cert-{}'.format(d): [ x for x in service_secrets if x.name.startswith('cert-{}.pem'.format(d[-44:]))][0]})
+                            aliases.update({'cert-{}'.format(d): [ x for x in service_secrets if x.name.startswith('cert-{}.pem'.format(d[-DFPLE.size_secret:]))][0]})
                         DFPLE.service_update_secrets(service, aliases)
                     else:
                         logger.error('Could not find service named {}'.format(
