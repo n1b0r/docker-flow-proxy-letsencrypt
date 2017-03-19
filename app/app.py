@@ -7,15 +7,9 @@ import requests
 import subprocess
 import time
 
+from dfple import *
 from flask import Flask, request, send_from_directory
 
-LEVELS = {'debug': logging.DEBUG,
-          'info': logging.INFO,
-          'warning': logging.WARNING,
-          'error': logging.ERROR,
-          'critical': logging.CRITICAL}
-
-logging.basicConfig(level=LEVELS.get(os.environ.get('LOG', 'info').lower()))
 logger = logging.getLogger('letsencrypt')
 
 DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
@@ -32,141 +26,7 @@ if docker_socket_path and os.path.exists(docker_socket_path):
         base_url='unix:/{}'.format(docker_socket_path),
         version='1.25')
 
-
-
-
-class DockerFlowProxyAPIClient:
-    def __init__(self, DF_PROXY_SERVICE_BASE_URL=None, adaptor=None):
-        self.base_url = DF_PROXY_SERVICE_BASE_URL
-        if self.base_url is None:
-            self.base_url = os.environ.get('DF_PROXY_SERVICE_NAME')
-
-        self.adaptor = adaptor
-        if self.adaptor is None:
-            self.adaptor = requests
-
-    def url(self, version, url):
-        return 'http://{}:8080/v{}/docker-flow-proxy'.format(self.base_url, version) + url
-
-    def _request(self, method_name, url, **kwargs):
-        logger.debug('[{}] {}'.format(method_name, url))
-        r = getattr(self.adaptor, method_name)(url, **kwargs)
-        logger.debug('     {}: {}'.format(r.status_code, r.text))
-        return r 
-    def put(self, *args, **kwargs):
-        return self._request('put', *args, **kwargs)
-    def get(self, *args, **kwargs):
-        return self._request('get', *args, **kwargs)
-
-
-class CertbotClient():
-    def __init__(self):
-        pass
-
-    def run(self, cmd):
-        # cmd = cmd.split()
-        logger.debug('executing cmd : {}'.format(cmd))
-        process = subprocess.Popen(cmd,
-                                   stdout=subprocess.PIPE, 
-                                   stderr=subprocess.PIPE)
-        output, error = process.communicate()
-        logger.debug("o: {}".format(output))
-        if error:
-            logger.debug(error)
-        logger.debug("r: {}".format(process.returncode))
-        
-        return output, error, process.returncode
-
-    def update_cert(self, domains, email):
-        """
-        Update certifacts
-        """
-        output, error, code = self.run("""certbot certonly \
-                    --agree-tos \
-                    --domains {domains} \
-                    --email {email} \
-                    --expand \
-                    --noninteractive \
-                    --webroot \
-                    --webroot-path {webroot_path} \
-                    --debug \
-                    {options}""".format(
-                        domains=domains,
-                        email=email,
-                        webroot_path=CERTBOT_WEBROOT_PATH,
-                        options=CERTBOT_OPTIONS).split())
-
-        if b'urn:acme:error:unauthorized' in error:
-            logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
-
-        if error or b'no action taken.' in output:
-            return False
-
-        return True
-
-
-class DFPLE():
-
-    # cert-XXX-YYYYMMDD-HHMMSS
-    size_secret = 64 - 5 - 16
-
-    @classmethod    
-    def service_update_secrets(cls, service, secrets):
-        
-        spec = service.attrs['Spec']
-        container_spec = spec['TaskTemplate']['ContainerSpec']
-
-        if "Secrets" in container_spec.keys():
-            # keep secrets that are not matching aliases
-            s = [x for x in container_spec['Secrets'] if not any([x['File']['Name'] == a for a in secrets.keys()])]
-        else:
-            s = []
-
-        for alias, secret in secrets.items():
-            s.append({
-                'SecretID': secret.id,
-                'SecretName': secret.name,
-                'File': {
-                    'Name': alias,
-                    'UID': '0',
-                    'GID': '0',
-                    'Mode': 0}})
-
-        container_spec['Secrets'] = s
-
-        cmd = """curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/1.25/services/{service_id}/update?version={version} -d '{data}'""".format(
-            data=json.dumps(spec), socket=docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
-        logger.debug('EXEC {}'.format(cmd))
-        code = os.system(cmd)
-     
-    @classmethod    
-    def secret_create(cls, secret_name, secret_data):
-
-        # search for already existing secrets
-        s = docker_client.secrets().list(filters={'name': secret_name})
-        secret_name = 'cert-' + secret_name[-cls.size_secret:]
-        secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-
-        # create secret.
-        logger.debug('creating secret {}'.format(secret_name))
-        secret = docker_client.secrets().create(
-            name=secret_name,
-            data=secret_data)
-        logger.debug('secret created {}'.format(secret.id))
-
-        secret = docker_client.secrets().get(secret.id)
-        return secret
-
-    @classmethod
-    def service_get(cls, service_name):
-        services = docker_client.services.list(
-            filters={'name': service_name})
-        services = [x for x in services if x.name == service_name]
-        if len(services) == 1:
-            return services[0]
-        else:
-            return None
-
+dfple_client = DFPLE(docker_client, docker_socket_path)
 
 app = Flask(__name__)
 
@@ -179,7 +39,7 @@ def acme_challenge(path):
 def update(version):
 
     dfp_client = DockerFlowProxyAPIClient()
-    certbot = CertbotClient()
+    certbot = CertbotClient(CERTBOT_WEBROOT_PATH, CERTBOT_OPTIONS)
     
     if version == 1:
 
@@ -211,12 +71,13 @@ def update(version):
                     combined.write(priv.read())
                     logger.info('combined certificate generated into "{}".'.format(combined_path))
 
-                service_secrets = []
+
                 cert_types = [
                     ('combined', 'pem'),
                     ('fullchain', 'crt'),
                     ('privkey', 'key')]
 
+                new_secrets = {}
                 domains = domains.split(',')
                 for domain in domains:
                     
@@ -234,9 +95,9 @@ def update(version):
 
                         # for each certificate, generate a secret as it could be used by other services
                         if docker_client != None:
-
-                            secret = DFPLE.secret_create('{}.{}'.format(domain, cert_extension), open(dest_file, 'rb').read())
-                            service_secrets.append(secret)
+                            secret_name = '{}.{}'.format(domain, cert_extension)
+                            secret = dfple_client.secret_create(secret_name, open(dest_file, 'rb').read())
+                            new_secrets.update({secret_name: secret})
 
                     if docker_client == None:
                         # old style, use docker-flow-proxy PUT request to update certs
@@ -252,12 +113,33 @@ def update(version):
                 if docker_client != None:
                     
                     # update secrets of docker-flow-proxy service
-                    service = DFPLE.service_get(os.environ.get('DF_PROXY_SERVICE_NAME'))
+                    service = dfple_client.service_get(os.environ.get('DF_PROXY_SERVICE_NAME'))
                     if service:
-                        aliases = {}
+                        # get service current secrets
+                        current_secrets = service.attrs['Spec']['TaskTemplate']['ContainerSpec'].get('Secrets', [])
+
+                        # keep secrets that are not going to be updated
+                        secrets = [ x for x in current_secrets if not any([ d in x['File']['Name'] for d in domains])] 
+
+                        # for each domain, add combined cert secret
                         for d in domains:
-                            aliases.update({'cert-{}'.format(d): [ x for x in service_secrets if x.name.startswith('cert-{}.pem'.format(d[-DFPLE.size_secret:]))][0]})
-                        DFPLE.service_update_secrets(service, aliases)
+
+                            # get the new secret generated for the current cert.
+                            name = '{}.pem'.format(d)
+                            secret = new_secrets[name]
+                            
+                            # append it to the secrets list and name it correctly to be handled by dfp (cert-*)
+                            secrets.append({
+                                'SecretID': secret.id,
+                                'SecretName': secret.name,
+                                'File': {
+                                    'Name': 'cert-{}'.format(d),
+                                    'UID': '0',
+                                    'GID': '0', 
+                                    'Mode': 0}
+                                })
+
+                        dfple_client.service_update_secrets(service, secrets)
                     else:
                         logger.error('Could not find service named {}'.format(
                             os.environ.get('DF_PROXY_SERVICE_NAME')))
