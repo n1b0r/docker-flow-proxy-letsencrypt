@@ -259,7 +259,7 @@ class DFPLESecret(DFPLETestCase, Scenario):
 
     def test_basic(self):
 
-        super(DFPLESecret, self).test_one_domain()
+        super(DFPLESecret, self).test_basic()
 
         # check secrets
         service = self.docker_client.services.get(self.dfp_service.id)
