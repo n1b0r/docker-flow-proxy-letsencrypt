@@ -6,6 +6,9 @@ stages:
   - test
   - release
 
+variables:
+  IMAGE_NAME: nib0r/docker-flow-proxy-letsencrypt
+
 test:
   stage: test
   script:
@@ -29,6 +32,17 @@ release:
     - ks2.nibor.me
   only:
     - master
+
+release:
+  stage: release
+  script:
+    - docker build -t $IMAGE_NAME:${CI_BUILD_REF_NAME} .
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
+    - docker push $IMAGE_NAME:${CI_BUILD_REF_NAME}
+  tags:
+    - ks2.nibor.me
+  only:
+    - develop
 
 release_tags:
   stage: release
