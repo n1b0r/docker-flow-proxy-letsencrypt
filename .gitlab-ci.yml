@@ -38,4 +38,6 @@ release_tags:
     - docker push nib0r/docker-flow-proxy-letsencrypt:$CI_BUILD_TAG
   only:
     - tags
+  tags:
+    - ks2.nibor.me
 
