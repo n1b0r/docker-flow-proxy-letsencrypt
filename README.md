@@ -1,6 +1,6 @@
 # docker-flow-proxy letsencrypt 
 
-`docker-flow-proxy-letsencrypt` is a `docker-flow-proxy` companion that automatically create and renew certificates for your services.
+`docker-flow-proxy-letsencrypt` is a `docker-flow-proxy` companion that automatically create and renew certificates for your swarm services.
 
 You need to set deployment labels to enable let's encrypt support for each proxied services:
   * com.df.letsencrypt.host
@@ -16,7 +16,14 @@ Create the `proxy` network.
 docker network create -d overlay proxy
 ```
 
-### proxy stack
+Then you can choose how you want to use `docker-flow-proxy-letsencrypt`:
+  * using volumes
+  * using secrets
+
+### Using volumes
+
+
+### Using secrets
 
 ```
 version: "3"
@@ -27,14 +34,11 @@ services:
     ports:
       - 80:80
       - 443:443
-    volumes:
-      - dfp-certs:/certs
     networks:
       - proxy
     environment:
       - LISTENER_ADDRESS=swarm-listener
       - MODE=swarm
-      - SERVICE_NAME=proxy_proxy
     deploy:
       replicas: 1
 
@@ -55,12 +59,12 @@ services:
     image: nib0r/docker-flow-proxy-letsencrypt
     networks:
       - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DF_PROXY_SERVICE_NAME=proxy_proxy
       # - LOG=debug
       # - CERTBOT_OPTIONS=--staging
-    volumes:
-      - le-certs:/etc/letsencrypt
     deploy:
       replicas: 1
       labels:
@@ -79,7 +83,8 @@ volumes:
 
 ```
 
-Environment variables :
+### Environment variables
+
   * `DF_PROXY_SERVICE_NAME`: `docker-flow-proxy` service name (either SERVICE-NAME or STACK-NAME_SERVICE-NAME).
   * `CERTBOT_OPTIONS`: custom options added to certbot command line (example: --staging).
   * `LOG`: logging level (debug, info, warning, error), defaults to info.
@@ -109,30 +114,3 @@ networks:
   proxy:
     external: true
 ```
-
-## The actual design
-
-The current design is pretty easy, `docker-flow-swarm-listener` sends all **RECONFIGURE** requests (as defined in the **CREATE** env var) to `docker-flow-proxy-letsencrypt`.
-
-`docker-flow-proxy-letsencrypt` check if the created service use special labels (**com.df.letsencrypt.host**, **com.df.letsencrypt.email**):
-  * if yes, we go throught certbot process and if a new certificate is generated, we send it to `docker-flow-proxy` via **PUT /certs**.
-  * in both case (if special labels found or not), we forward the original request to `docker-flow-proxy`
-
-`docker-flow-proxy` get the **RECONFIGURE** request and handle the job.
-
-
-	swarm-listner >> proxy-le >> proxy
-
-
-## Improved design
-
-We should provide a new env var for `docker-flow-swarm-listener` to be able to send a request to `docker-flow-proxy-letsencrypt`. Let say, `DF_NOTIFY_LETSENCRYPT_SERVICE_URL`.
-
-`docker-flow-swarm-listener` could detected new services with letsencrypt support based on labels `com.df.letsencrypt.host`, `com.df.letsencrypt.email`. And then send a request to `docker-flow-swarm-listener` or `docker-flow-proxy`.
-
-`docker-flow-proxy-letsencrypt` should trigger only one request to perform reconfigure and certificate update (PUT request with certifcate as data ?)
-
-## Things to do
-
-  * renewal process based on cron (we night need that `docker-flow-swarm-listener` gives us the list of services).
-  * remove cert process.
