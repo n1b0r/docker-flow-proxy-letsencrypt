@@ -83,6 +83,10 @@ class CertbotClient():
 
         return True
 
+cert_types = [
+    ('combined', 'pem'),
+    ('fullchain', 'crt'),
+    ('privkey', 'key')]
 
 class DFPLE():
 
@@ -91,6 +95,68 @@ class DFPLE():
         self.docker_socket_path = docker_socket_path
         # cert-XXX-YYYYMMDD-HHMMSS
         self.size_secret = 64 - 5 - 16
+
+    def generate_certs(self, domains, email):
+        """
+            Generate, renew or simply return certificates for given domains
+     
+            :param domains: Domain names to generate certificates. Comma separated.
+            :param email: Email used during letsencrypt process
+            :type a: string
+            :type b: string
+            :return: List of certificates path
+            :rtype: list of string
+        """
+        logger.debug('Generating certificates domains:{} email:{}'.format(domains, email))
+
+        created = certbot.update_cert(domains, email)
+        certs = []
+        if created:
+            logger.info('certificates successfully created using certbot.')
+
+            # if multiple domains comma separated, take only the first one
+            base_domain = domains.split(',')[0]
+
+            # generate combined certificate needed for haproxy
+            combined_path = os.path.join(CERTBOT_FOLDER, 'live', base_domain, "combined.pem")
+            with open(combined_path, "w") as combined, \
+                 open(os.path.join(CERTBOT_FOLDER, 'live', base_domain, "privkey.pem"), "r") as priv, \
+                 open(os.path.join(CERTBOT_FOLDER, 'live', base_domain, "fullchain.pem"), "r") as fullchain:
+
+                combined.write(fullchain.read())
+                combined.write(priv.read())
+                logger.info('combined certificate generated into "{}".'.format(combined_path))
+
+            for domain in domains:
+                
+                for cert_type, cert_extension in cert_types:
+
+                    dest_file = os.path.join(CERTBOT_FOLDER, "{}.{}".format(domain, cert_extension))
+
+                    if os.path.exists(dest_file):
+                        os.remove(dest_file)
+
+                    # generate symlinks
+                    os.symlink(
+                        os.path.join('./live', base_domain, "{}.pem".format(cert_type)),
+                        dest_file)
+
+                    certs.append(dest_file)    
+        else:
+            # no certs generated, search for already existing certificates
+            for domain in domains:    
+                for cert_type, cert_extension in cert_types:
+                    dest_file = os.path.join(CERTBOT_FOLDER, "{}.{}".format(domain, cert_extension))
+                    if os.path.exists(dest_file):
+                        certs.append(dest_file)
+
+        return certs, created
+
+
+
+
+
+
 
     def new_secret_name(self, name, template='{name}-{suffix}', suffix=None):
         """
