@@ -8,14 +8,13 @@ from unittest import TestCase
 
 class DFPLETestCase(TestCase):
     """
-    Original DFPLE implementation rely on DFP /put request to update certs.
     """
 
     def setUp(self):
         """
         Setup the needed environment:
-          * DFP + DFPLE
-          * client service requesting certificates
+          * DFP
+          * DFSL
         """
            
         time.sleep(10)
@@ -55,6 +54,8 @@ class DFPLETestCase(TestCase):
             'name': 'swarm_listener_{}'.format(self.test_name),
             'image': 'vfarcic/docker-flow-swarm-listener',
             'constraints': ["node.role == manager"],
+            'endpoint_spec': docker.types.EndpointSpec(
+                ports={8081: 8080}),
             'env': [ 
                 "DF_NOTIFY_CREATE_SERVICE_URL=http://proxy_le_{}:8080/v1/docker-flow-proxy-letsencrypt/reconfigure".format(self.test_name),
                 "DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy_{}:8080/v1/docker-flow-proxy/remove".format(self.test_name)],
@@ -79,30 +80,34 @@ class DFPLETestCase(TestCase):
 
         self.network.remove()
 
-
     def get_conf(self):
-        return requests.get('http://{}:8080/v1/docker-flow-proxy/config'.format(self.base_domain), timeout=3).text
-    def config_match(self, text):
         try:
-            conf = self.get_conf()
-            return text in conf
+            return requests.get('http://{}:8080/v1/docker-flow-proxy/config'.format(self.base_domain), timeout=3).text
         except Exception, e:
             print('Error while getting config on {}: {}'.format(self.base_domain, e))
             return False
 
-    def wait_until_found_in_config(self, text, timeout=45):
+    def wait_until_found_in_config(self, texts, timeout=45):
         # print('WAITING FOR', text)
+
         _start = time.time()
         _current = time.time()
+        
+        print '-------------'
+        print 'Searching in config for', '\n\t -{}'.format('\n\t -'.join(texts))
+
         while _current < _start + timeout:
-            # print('<< while', _current)
-            if self.config_match(text):
-                # print('<< found')
-                return True
+            
+            config = self.get_conf()
+            if config:
+                if all([t in config for t in texts]):
+                    return True
+
             time.sleep(1)
             _current = time.time()
 
-        # print('OUT OF TIME')
+        print(self.get_conf())
+
         return False
 
 
@@ -125,7 +130,6 @@ class DFPLETestCase(TestCase):
                                    stderr=subprocess.PIPE)
         (out, err) = proc.communicate()
         print "output:", out, err
-
 
 
 class Scenario():
@@ -153,23 +157,18 @@ class Scenario():
 
         # wait until service has registered routes
         self.assertTrue(
-            self.wait_until_found_in_config('test_service_{}'.format(self.test_name)),
+            self.wait_until_found_in_config(['test_service_{}'.format(self.test_name)]),
             "test service not registered.")
 
         # check certs are used
-        certs_path = "/certs/"
-        ext = '.pem'
-        if isinstance(self, DFPLESecret):
-            certs_path = "/run/secrets/cert-"
-            ext = ''
+        certs_path = "/run/secrets/cert-"
+        ext = ''
+        if isinstance(self, DFPLEOriginal):
+            certs_path = "/certs/"
+            ext = '.pem'
 
         m = 'ssl crt {1}{0}.{3}{2} crt {1}{0}2.{3}{2}'.format(self.test_name, certs_path, ext, self.base_domain)
-        found_in_config = self.wait_until_found_in_config(m)
-        if not found_in_config:
-            print('Searching in config for', m)
-            print('------ LAST CONF --------')
-            print(self.get_conf())
-        self.assertTrue(found_in_config)
+        self.assertTrue(self.wait_until_found_in_config([m]))
 
 
 class DFPLEOriginal(DFPLETestCase, Scenario):
@@ -206,7 +205,7 @@ class DFPLEOriginal(DFPLETestCase, Scenario):
         self.services.append(self.dfple_service)
 
         # wait until proxy_le service has registered routes
-        proxy_le_present_in_config = self.wait_until_found_in_config(self.proxy_le_service_name)
+        proxy_le_present_in_config = self.wait_until_found_in_config([self.proxy_le_service_name])
         if not proxy_le_present_in_config:
             self.get_service_logs(self.proxy_le_service_name)
 
@@ -249,7 +248,7 @@ class DFPLESecret(DFPLETestCase, Scenario):
         self.services.append(self.dfple_service)
 
         # wait until proxy_le service has registered routes
-        proxy_le_present_in_config = self.wait_until_found_in_config(self.proxy_le_service_name)
+        proxy_le_present_in_config = self.wait_until_found_in_config([self.proxy_le_service_name])
         if not proxy_le_present_in_config:
             self.get_service_logs(self.proxy_le_service_name)
 
@@ -266,3 +265,104 @@ class DFPLESecret(DFPLETestCase, Scenario):
         secret_aliases = [x['File']['Name'] for x in service.attrs['Spec']['TaskTemplate']['ContainerSpec']['Secrets']]
         self.assertIn('cert-{}.{}'.format(self.test_name, self.base_domain), secret_aliases)
         self.assertIn('cert-{}2.{}'.format(self.test_name, self.base_domain), secret_aliases)
+
+
+class DFPLEUpdate(DFPLETestCase, Scenario):
+
+
+    def setUp(self):
+
+        super(DFPLEUpdate, self).setUp()
+
+        # docker-flow-proxy-letsencrypt service
+        dfple_image = self.docker_client.images.build(
+            path=os.path.dirname(os.path.abspath(__file__)),
+            tag='robin/docker-flow-proxy-letsencrypt:{}'.format(self.test_name),
+            quiet=False)
+        dfple_service = {
+            'name': self.proxy_le_service_name,
+            'image': 'robin/docker-flow-proxy-letsencrypt:{}'.format(self.test_name),
+            'constraints': ["node.role == manager"],
+            'env': [
+                "DF_PROXY_SERVICE_NAME=proxy_{}".format(self.test_name),
+                "CERTBOT_OPTIONS=--staging",
+                "LOG=debug",
+            ],
+            'labels': {
+                "com.df.notify": "true",
+                "com.df.distribute": "true",
+                "com.df.servicePath": "/.well-known/acme-challenge",
+                "com.df.port": "8080",
+            },
+            'networks': [self.network_name],
+            'mounts': ['/var/run/docker.sock:/var/run/docker.sock:rw'],
+        }
+
+        self.dfple_service = self.docker_client.services.create(**dfple_service)
+        self.services.append(self.dfple_service)
+
+        # wait until proxy_le service has registered routes
+        proxy_le_present_in_config = self.wait_until_found_in_config([self.proxy_le_service_name])
+        if not proxy_le_present_in_config:
+            self.get_service_logs(self.proxy_le_service_name)
+
+        self.assertTrue(
+            proxy_le_present_in_config,
+            "docker-flow-proxy-letsencrypt service not registered.")
+
+    def test_basic(self):
+
+        super(DFPLEUpdate, self).test_basic()
+
+        # check secrets
+        service = self.docker_client.services.get(self.dfp_service.id)
+        secrets = [x for x in service.attrs['Spec']['TaskTemplate']['ContainerSpec']['Secrets']]
+        secret_aliases = [x['File']['Name'] for x in service.attrs['Spec']['TaskTemplate']['ContainerSpec']['Secrets']]
+        self.assertIn('cert-{}.{}'.format(self.test_name, self.base_domain), secret_aliases)
+        self.assertIn('cert-{}2.{}'.format(self.test_name, self.base_domain), secret_aliases)
+
+        ref_secret = [ x for x in secrets if x['File']['Name'] == 'cert-{}.{}'.format(self.test_name, self.base_domain)]
+
+        # revoke certs
+        #   - get dfple container
+        container = self.docker_client.containers.list(filters={'name': self.proxy_le_service_name}) 
+        if len(container):
+            container = container[0]
+        else:
+            raise Exception('Unable to get proxy le container')
+
+        # print(container.exec_run("rm /etc/letsencrypt/live/{}/cert.pem".format('{}.{}'.format(self.test_name, self.base_domain))))
+        print(container.exec_run("certbot revoke --cert-path /etc/letsencrypt/live/{}/cert.pem --staging".format(
+            "{0}.{1}".format(self.test_name, self.base_domain))))
+
+        print(container.exec_run("rm /etc/letsencrypt/live/{}/combined.pem".format(
+            "{0}.{1}".format(self.test_name, self.base_domain))))
+
+        time.sleep(10)
+
+        print(container.exec_run("certbot delete --cert-name {} --staging".format(
+            "{0}.{1}".format(self.test_name, self.base_domain))))
+
+        print(container.exec_run("cat /var/log/letsencrypt/letsencrypt.log"))
+
+        # print(container.exec_run("certbot revoke --cert-path /etc/letsencrypt/live/{}/cert.pem --cert-path /etc/letsencrypt/live/{}/cert.pem".format(
+        #     "{0}.{1}".format(self.test_name, self.base_domain),
+        #     "{0}2.{1}".format(self.test_name, self.base_domain))))
+
+        # trigger a update request
+        print('Triggering an update request')
+        requests.get('http://{}:8081/v1/docker-flow-swarm-listener/notify-services'.format(self.base_domain), timeout=3).text
+
+        # wait until dfp restart with new certs.
+        time.sleep(30)
+
+        texts = [
+            'bind *:443 ssl crt /run/secrets/cert-{0}.{1} crt /run/secrets/cert-{0}2.{1}'.format(self.test_name, self.base_domain)
+        ]
+        
+        self.assertTrue(self.wait_until_found_in_config(texts))
+
+        service = self.docker_client.services.get(self.dfp_service.id)
+        secrets = [x for x in service.attrs['Spec']['TaskTemplate']['ContainerSpec']['Secrets']]
+        new_ref = [ x for x in secrets if x['File']['Name'] == 'cert-{}.{}'.format(self.test_name, self.base_domain)]
+        self.assertNotEqual(new_ref, ref_secret)

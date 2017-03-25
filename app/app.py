@@ -10,7 +10,16 @@ import time
 from dfple import *
 from flask import Flask, request, send_from_directory
 
-logger = logging.getLogger('letsencrypt')
+
+LEVELS = {'debug': logging.DEBUG,
+          'info': logging.INFO,
+          'warning': logging.WARNING,
+          'error': logging.ERROR,
+          'critical': logging.CRITICAL}
+
+logging.basicConfig(level=LEVELS.get(os.environ.get('LOG', 'info').lower()))
+
+logger = logging.getLogger(__name__)
 
 DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
 DF_PROXY_SERVICE_BASE_URL = os.environ.get('DF_PROXY_SERVICE_BASE_URL')
@@ -35,8 +44,16 @@ def acme_challenge(path):
     return send_from_directory(CERTBOT_WEBROOT_PATH,
         ".well-known/acme-challenge/{}".format(path))
 
-@app.route("/v<int:version>/docker-flow-proxy-letsencrypt/reconfigure")
+@app.route("/v<int:version>/docker-flow-proxy-letsencrypt/update")
 def update(version):
+    """
+    """
+
+    requests.get('http://{}:{}/v1/docker-flow-swarm-listener')
+
+
+@app.route("/v<int:version>/docker-flow-proxy-letsencrypt/reconfigure")
+def reconfigure(version):
 
     dfp_client = DockerFlowProxyAPIClient()
     certbot = CertbotClient(CERTBOT_WEBROOT_PATH, CERTBOT_OPTIONS)

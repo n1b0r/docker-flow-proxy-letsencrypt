@@ -73,7 +73,12 @@ class CertbotClient():
         if b'urn:acme:error:unauthorized' in error:
             logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
 
-        if error or b'no action taken.' in output:
+        if b'no action taken.' in output:
+            logger.debug('Nothing to do. Skipping.')
+            return False
+
+        if code != 0:
+            logger.error('Certbot return code: {}. Skipping'.format(code))
             return False
 
         return True
