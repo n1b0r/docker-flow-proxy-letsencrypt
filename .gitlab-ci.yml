@@ -4,6 +4,7 @@ services:
 
 stages:
   - test
+  - release_gitlab
   - release
 
 variables:
@@ -14,6 +15,7 @@ test:
   script:
     - pytest tests.py
   tags:
+    - shell
     - ks2.nibor.me
   only:
     - develop
@@ -33,13 +35,24 @@ release:
   only:
     - master
 
-release:
+release_gitlab:
+  stage: release_gitlab
+  script:
+    - docker build -t $IMAGE_NAME:${CI_BUILD_REF_NAME} .
+    - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN registry.example.com
+    - docker push $IMAGE_NAME:${CI_BUILD_REF_NAME}
+  tags:
+    - docker
+    - ks2.nibor.me
+
+release_develop:
   stage: release
   script:
     - docker build -t $IMAGE_NAME:${CI_BUILD_REF_NAME} .
     - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
     - docker push $IMAGE_NAME:${CI_BUILD_REF_NAME}
   tags:
+    - docker
     - ks2.nibor.me
   only:
     - develop

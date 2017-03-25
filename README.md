@@ -1,6 +1,8 @@
 # docker-flow-proxy letsencrypt 
 
-`docker-flow-proxy-letsencrypt` is a `docker-flow-proxy` companion that automatically create and renew certificates for your swarm services.
+`docker-flow-proxy-letsencrypt` is a `docker-flow-proxy` companion that automatically create ~~and renew certificates~~ for your swarm services.
+
+The automatic renew certificates feature is currently a work in progress. As a workaround, you can force a **notify-services** request to `docker-flow-swarm-listener` (eg: `curl http://swarm-listener-service-name:8080/v1/docker-flow-swarm-listener/notify-services`)
 
 You need to set deployment labels to enable let's encrypt support for each proxied services:
   * com.df.letsencrypt.host
