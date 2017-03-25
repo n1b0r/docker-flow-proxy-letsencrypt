@@ -1,6 +1,6 @@
-image: docker:git
+image: docker:1.12
 services:
-  - docker:dind
+  - docker:1.12-dind
 
 stages:
   - test
