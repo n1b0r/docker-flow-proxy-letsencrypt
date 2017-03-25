@@ -43,9 +43,9 @@ release:
 release_gitlab:
   stage: release_gitlab
   script:
-    - docker build -t $IMAGE_NAME:${CI_BUILD_REF_NAME} .
+    - docker build -t docker.nibor.me/$IMAGE_NAME:${CI_BUILD_REF_NAME} .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN docker.nibor.me
-    - docker push $IMAGE_NAME:${CI_BUILD_REF_NAME}
+    - docker push docker.nibor.me/$IMAGE_NAME:${CI_BUILD_REF_NAME}
   tags:
     - docker
     - ks2.nibor.me
