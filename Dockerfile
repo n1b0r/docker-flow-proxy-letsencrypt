@@ -10,8 +10,8 @@ RUN mkdir -p /opt/www
 RUN mkdir -p /etc/letsencrypt
 RUN mkdir -p /var/lib/letsencrypt
 
-ADD ./app/requirements.txt /app/requirements.txt
-RUN pip install -r /app/requirements.txt
+ADD ./requirements.txt /requirements.txt
+RUN pip install -r /requirements.txt
 
 EXPOSE 8080
 

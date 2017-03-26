@@ -107,6 +107,8 @@ class DFPLETestCase(TestCase):
             _current = time.time()
 
         print(self.get_conf())
+        self.get_service_logs(self.proxy_le_service_name)
+
 
         return False
 
