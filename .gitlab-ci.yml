@@ -32,11 +32,11 @@ test:
 release:
   stage: release
   script:
+    - docker build -t $IMAGE_NAME:latest .
     - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
-    - docker pull nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME}
-    - docker tag nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_REF_NAME} nib0r/docker-flow-proxy-letsencrypt:latest
-    - docker push nib0r/docker-flow-proxy-letsencrypt:latest
+    - docker push $IMAGE_NAME:latest
   tags:
+    - docker
     - ks2.nibor.me
   only:
     - master
@@ -67,8 +67,8 @@ release_tags:
   stage: release
   script:
     - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
-    - docker build -t nib0r/docker-flow-proxy-letsencrypt:${CI_BUILD_TAG} .
-    - docker push nib0r/docker-flow-proxy-letsencrypt:$CI_BUILD_TAG
+    - docker build -t ${IMAGE_NAME}:${CI_BUILD_TAG} .
+    - docker push ${IMAGE_NAME}:$CI_BUILD_TAG
   only:
     - tags
   tags:
