@@ -34,6 +34,8 @@ services:
       - 80:80
       - 443:443
     volumes:
+      # create a dedicated volumes for dfp /certs folder.
+      # certificates stored in this folder will be automatically loaded during proxy start.
       - dfp-certs:/certs
     networks:
       - proxy
@@ -66,6 +68,8 @@ services:
       # - LOG=debug
       # - CERTBOT_OPTIONS=--staging
     volumes:
+      # create a dedicated volume for letsencrypt folder.
+      # You will be able to link this volume to another service that also needs certificates
       - le-certs:/etc/letsencrypt
     deploy:
       replicas: 1
@@ -122,12 +126,16 @@ services:
     image: nib0r/docker-flow-proxy-letsencrypt
     networks:
       - proxy
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - DF_PROXY_SERVICE_NAME=proxy_proxy
       # - LOG=debug
       # - CERTBOT_OPTIONS=--staging
+    volumes:
+      # link docker socket to activate secrets support.
+      - /var/run/docker.sock:/var/run/docker.sock
+      # create a dedicated volume for letsencrypt folder.
+      # You will be able to link this volume to another service that also needs certificates.
+      - le-certs:/etc/letsencrypt
     deploy:
       replicas: 1
       labels:
@@ -140,8 +148,6 @@ networks:
     external: true
 volumes:
   le-certs:
-    external: true
-  dfp-certs:
     external: true
 
 ```
