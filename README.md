@@ -24,6 +24,66 @@ Then you can choose how you want to use `docker-flow-proxy-letsencrypt`:
 
 ### Using volumes
 
+```
+version: "3"
+services:
+
+  proxy:
+    image: vfarcic/docker-flow-proxy
+    ports:
+      - 80:80
+      - 443:443
+    volumes:
+      - dfp-certs:/certs
+    networks:
+      - proxy
+    environment:
+      - LISTENER_ADDRESS=swarm-listener
+      - MODE=swarm
+      - SERVICE_NAME=proxy_proxy
+    deploy:
+      replicas: 1
+
+  swarm-listener:
+    image: vfarcic/docker-flow-swarm-listener
+    networks:
+      - proxy
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - DF_NOTIFY_CREATE_SERVICE_URL=http://proxy-le:8080/v1/docker-flow-proxy-letsencrypt/reconfigure
+      - DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy_proxy:8080/v1/docker-flow-proxy/remove
+    deploy:
+      placement:
+        constraints: [node.role == manager]
+
+  proxy-le:
+    image: nib0r/docker-flow-proxy-letsencrypt
+    networks:
+      - proxy
+    environment:
+      - DF_PROXY_SERVICE_NAME=proxy_proxy
+      # - LOG=debug
+      # - CERTBOT_OPTIONS=--staging
+    volumes:
+      - le-certs:/etc/letsencrypt
+    deploy:
+      replicas: 1
+      labels:
+        - com.df.notify=true
+        - com.df.distribute=true
+        - com.df.servicePath=/.well-known/acme-challenge
+        - com.df.port=8080
+networks:
+  proxy:
+    external: true
+volumes:
+  le-certs:
+    external: true
+  dfp-certs:
+    external: true
+
+```
 
 ### Using secrets
 
@@ -41,6 +101,7 @@ services:
     environment:
       - LISTENER_ADDRESS=swarm-listener
       - MODE=swarm
+      - SERVICE_NAME=proxy_proxy
     deploy:
       replicas: 1
 

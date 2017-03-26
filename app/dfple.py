@@ -65,7 +65,7 @@ class CertbotClient():
                     --webroot-path {webroot_path} \
                     --debug \
                     {options}""".format(
-                        domains=domains,
+                        domains=','.join(domains),
                         email=email,
                         webroot_path=self.webroot_path,
                         options=self.options).split())
@@ -90,48 +90,54 @@ cert_types = [
 
 class DFPLE():
 
-    def __init__(self, docker_client=None, docker_socket_path=None):
+    def __init__(self, docker_client, docker_socket_path, certbot_webroot, certbot_options, certbot_folder):
         self.docker_client = docker_client
         self.docker_socket_path = docker_socket_path
-        # cert-XXX-YYYYMMDD-HHMMSS
-        self.size_secret = 64 - 5 - 16
+        # XXX-YYYYMMDD-HHMMSS
+        self.size_secret = 64 - 16
+        self.certbot = CertbotClient(certbot_webroot, certbot_options)
+        self.certbot_folder = certbot_folder
+    
 
-    def generate_certs(self, domains, email):
+    def generate_certificates(self, domains, email):
         """
-            Generate, renew or simply return certificates for given domains
+            Generate or renew certificates for given domains
      
             :param domains: Domain names to generate certificates. Comma separated.
             :param email: Email used during letsencrypt process
             :type a: string
             :type b: string
-            :return: List of certificates path
+            :return: List of freshly created certificates path
             :rtype: list of string
         """
         logger.debug('Generating certificates domains:{} email:{}'.format(domains, email))
 
-        created = certbot.update_cert(domains, email)
-        certs = []
+        created = self.certbot.update_cert(domains, email)
+        certs = {}
+        for domain in domains:
+            certs[domain] = []
+
         if created:
             logger.info('certificates successfully created using certbot.')
 
             # if multiple domains comma separated, take only the first one
-            base_domain = domains.split(',')[0]
+            base_domain = domains[0]
 
             # generate combined certificate needed for haproxy
-            combined_path = os.path.join(CERTBOT_FOLDER, 'live', base_domain, "combined.pem")
+            combined_path = os.path.join(self.certbot_folder, 'live', base_domain, "combined.pem")
             with open(combined_path, "w") as combined, \
-                 open(os.path.join(CERTBOT_FOLDER, 'live', base_domain, "privkey.pem"), "r") as priv, \
-                 open(os.path.join(CERTBOT_FOLDER, 'live', base_domain, "fullchain.pem"), "r") as fullchain:
+                 open(os.path.join(self.certbot_folder, 'live', base_domain, "privkey.pem"), "r") as priv, \
+                 open(os.path.join(self.certbot_folder, 'live', base_domain, "fullchain.pem"), "r") as fullchain:
 
                 combined.write(fullchain.read())
                 combined.write(priv.read())
                 logger.info('combined certificate generated into "{}".'.format(combined_path))
 
             for domain in domains:
-                
+
                 for cert_type, cert_extension in cert_types:
 
-                    dest_file = os.path.join(CERTBOT_FOLDER, "{}.{}".format(domain, cert_extension))
+                    dest_file = os.path.join(self.certbot_folder, "{}.{}".format(domain, cert_extension))
 
                     if os.path.exists(dest_file):
                         os.remove(dest_file)
@@ -141,17 +147,51 @@ class DFPLE():
                         os.path.join('./live', base_domain, "{}.pem".format(cert_type)),
                         dest_file)
 
-                    certs.append(dest_file)    
+                    certs[domain].append(dest_file)    
         else:
             # no certs generated, search for already existing certificates
             for domain in domains:    
                 for cert_type, cert_extension in cert_types:
-                    dest_file = os.path.join(CERTBOT_FOLDER, "{}.{}".format(domain, cert_extension))
+                    dest_file = os.path.join(self.certbot_folder, "{}.{}".format(domain, cert_extension))
                     if os.path.exists(dest_file):
-                        certs.append(dest_file)
+                        certs[domain].append(dest_file)    
 
         return certs, created
 
+    def attach_secrets(self, secrets):
+        # update secrets of docker-flow-proxy service
+        service_name = os.environ.get('DF_PROXY_SERVICE_NAME')
+        service = self.service_get(service_name)
+        logger.debug(' > attach_secrets {}'.format([x.name for x in secrets]))
+
+        if service:
+            # get service current secrets
+            current_secrets = service.attrs['Spec']['TaskTemplate']['ContainerSpec'].get('Secrets', [])
+            logger.debug('current_secrets {}'.format(current_secrets))
+
+            # keep secrets that are not going to be updated
+            _secrets = [ x for x in current_secrets if not any([ s.name in x['File']['Name'] for s in secrets])] 
+
+            logger.debug('secrets to keep {}'.format([x.name for x in _secrets]))
+
+            # for each domain, add combined cert secret
+            for secret in secrets:
+                
+                # append it to the secrets list and name it correctly to be handled by dfp (cert-*)
+                _secrets.append({
+                    'SecretID': secret.id,
+                    'SecretName': secret.name,
+                    'File': {
+                        'Name': 'cert-{}'.format(secret.name),
+                        'UID': '0',
+                        'GID': '0', 
+                        'Mode': 0}
+                    })
+
+            self.service_update_secrets(service, _secrets)
+        else:
+            logger.error('Could not find service named {}'.format(
+                os.environ.get('DF_PROXY_SERVICE_NAME')))
 
 
 
@@ -184,7 +224,7 @@ class DFPLE():
         return _secrets
 
     def get_secret_name(self, name):
-        secret_name = 'cert-' + name[-self.size_secret:]
+        secret_name = name[-self.size_secret:]
         secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
         return secret_name
 
