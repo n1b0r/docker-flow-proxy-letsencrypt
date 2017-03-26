@@ -1,9 +1,15 @@
+import datetime
+import docker
+import json
 import logging
 import os
 import requests
 import subprocess
+import time
 
+from dfple import *
 from flask import Flask, request, send_from_directory
+
 
 LEVELS = {'debug': logging.DEBUG,
           'info': logging.INFO,
@@ -12,7 +18,8 @@ LEVELS = {'debug': logging.DEBUG,
           'critical': logging.CRITICAL}
 
 logging.basicConfig(level=LEVELS.get(os.environ.get('LOG', 'info').lower()))
-logger = logging.getLogger('letsencrypt')
+
+logger = logging.getLogger(__name__)
 
 DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
 DF_PROXY_SERVICE_BASE_URL = os.environ.get('DF_PROXY_SERVICE_BASE_URL')
@@ -20,87 +27,15 @@ CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
 CERTBOT_OPTIONS = os.environ.get('CERTBOT_OPTIONS', '')
 CERTBOT_FOLDER = "/etc/letsencrypt/"
 
-class DockerFlowProxyAPIClient:
-    def __init__(self, DF_PROXY_SERVICE_BASE_URL=None, adaptor=None):
-        self.base_url = DF_PROXY_SERVICE_BASE_URL
-        if self.base_url is None:
-            self.base_url = os.environ.get('DF_PROXY_SERVICE_NAME')
+docker_client = None
+docker_socket_path = os.environ.get('DOCKER_SOCKET_PATH')
+logger.debug('docker_socket_path {}'.format(docker_socket_path))
+if docker_socket_path and os.path.exists(docker_socket_path):
+    docker_client = docker.DockerClient(
+        base_url='unix:/{}'.format(docker_socket_path),
+        version='1.25')
 
-        self.adaptor = adaptor
-        if self.adaptor is None:
-            self.adaptor = requests
-
-    def url(self, version, url):
-        return 'http://{}:8080/v{}/docker-flow-proxy'.format(self.base_url, version) + url
-
-    def _request(self, method_name, url, **kwargs):
-        logger.debug('[{}] {}'.format(method_name, url))
-        r = getattr(self.adaptor, method_name)(url, **kwargs)
-        logger.debug('     {}: {}'.format(r.status_code, r.text))
-        return r 
-    def put(self, *args, **kwargs):
-        return self._request('put', *args, **kwargs)
-    def get(self, *args, **kwargs):
-        return self._request('get', *args, **kwargs)
-
-
-class CertbotClient():
-    def __init__(self):
-        pass
-
-    def run(self, cmd):
-        logger.debug('executing cmd : {}'.format(cmd.split()))
-        process = subprocess.Popen(cmd.split(),
-                                   stdout=subprocess.PIPE, 
-                                   stderr=subprocess.PIPE)
-        output, error = process.communicate()
-        logger.debug("o: {}".format(output))
-        if error:
-            logger.debug(error)
-        logger.debug("r: {}".format(process.returncode))
-        
-        return output, error, process.returncode
-
-    def update_cert(self, domains, email):
-        """
-        Update certifacts
-        """
-        output, error, code = self.run("""certbot certonly \
-                    --agree-tos \
-                    --domains {domains} \
-                    --email {email} \
-                    --expand \
-                    --noninteractive \
-                    --webroot \
-                    --webroot-path {webroot_path} \
-                    --debug \
-                    {options}""".format(
-                        domains=domains,
-                        email=email,
-                        webroot_path=CERTBOT_WEBROOT_PATH,
-                        options=CERTBOT_OPTIONS))
-
-        if b'urn:acme:error:unauthorized' in error:
-            logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
-
-        if error or b'no action taken.' in output:
-            return False
-
-        return True
-
-def is_letsencrypt_service(args):
-    """ Check if given service has special letsencrypt labels """
-
-    found = True
-    for label in ('letsencrypt.host', 'letsencrypt.email'):
-        if label in args.keys():
-            logger.debug('argument {} found : {}'.format(label, args.get(label)))
-        else:
-            found = False
-            logger.debug('argument {} NOT found.'.format(label))
-
-    return found
-
+dfple_client = DFPLE(docker_client, docker_socket_path, CERTBOT_WEBROOT_PATH, CERTBOT_OPTIONS, CERTBOT_FOLDER)
 
 app = Flask(__name__)
 
@@ -110,65 +45,106 @@ def acme_challenge(path):
         ".well-known/acme-challenge/{}".format(path))
 
 @app.route("/v<int:version>/docker-flow-proxy-letsencrypt/reconfigure")
-def update(version):
+def reconfigure(version):
 
-    if version == 1:
+    dfp_client = DockerFlowProxyAPIClient()
+    
+    args = request.args
 
-        args = request.args
+    if version != 1:
+        logger.error('Unable to use version : {}. Forwarding initial request to docker-flow-proxy service.'.format(version))
+    else:
+        
         logger.info('request for service: {}'.format(args.get('serviceName')))
         
-        client = DockerFlowProxyAPIClient()
-        
-        if is_letsencrypt_service(args):
-            logger.info('letencrypt service detected.')
+        # Check if the newly registered service is usign letsencrypt companion.
+        # Labels required:
+        #   * com.df.letsencrypt.host
+        #   * com.df.letsencrypt.email
+        required_labels = ('letsencrypt.host', 'letsencrypt.email')
+        if all([label in args.keys() for label in required_labels]):
 
+            logger.info('letencrypt support enabled.')
 
-            domains = args.get('letsencrypt.host')
+            # if letsencrypt support enabled, generate or renew certificates.
+            domains = args.get('letsencrypt.host').split(',')
             email = args.get('letsencrypt.email')
-            cert = None
 
-            cerbot = CertbotClient()
+            certificates, created = dfple_client.generate_certificates(domains, email)
 
-            if cerbot.update_cert(domains, email):
-                logger.info('certificates successfully generated using certbot.')
+            if docker_client == None:
+                if created:
+                    # no docker client provided, use docker-flow-proxy PUT request to update certificate
+                    for domain, certs in certificates.items():
+                        cert = [x for x in certs if '.pem' if x][0]
+                        dfp_client.put(
+                            dfp_client.url(
+                                version, 
+                                '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
+                            data=open(cert, 'rb').read(),
+                            headers={'Content-Type': 'application/octet-stream'})
 
-                # if multiple domains comma separated, take only the first one
-                base_domain = domains.split(',')[0]
+            # docker engine is provided, manage certificates as docker secrets
+            else:
 
-                # generate combined certificate
-                combined_path = os.path.join(CERTBOT_FOLDER, 'live', base_domain, "combined.pem")
-                with open(combined_path, "w") as combined, \
-                     open(os.path.join(CERTBOT_FOLDER, 'live', base_domain, "privkey.pem"), "r") as priv, \
-                     open(os.path.join(CERTBOT_FOLDER, 'live', base_domain, "fullchain.pem"), "r") as fullchain:
+                # get current dfp secrets
+                service = dfple_client.service_get(os.environ.get('DF_PROXY_SERVICE_NAME'))
+                service_secrets = service.attrs['Spec']['TaskTemplate']['ContainerSpec'].get('Secrets', [])
+                logger.debug('service_secrets : {}'.format(service_secrets))
+                secrets_changed = False
 
-                    combined.write(fullchain.read())
-                    combined.write(priv.read())
-                    logger.info('combined certificate generated into "{}".'.format(combined_path))
-
-                for domain in domains.split(','):
+                # for each combined certificates
+                for domain, certs in certificates.items():
+                    combined = [x for x in certs if '.pem' in x][0]
                     
-                    # create symlinks for
-                    #  * combined
-                    os.symlink(
-                        os.path.join('./live', base_domain, "combined.pem"),
-                        os.path.join(CERTBOT_FOLDER, "{}.pem".format(domain)))
-                    #  * domain.crt
-                    os.symlink(
-                        os.path.join('./live', base_domain, "fullchain.pem"),
-                        os.path.join(CERTBOT_FOLDER, "{}.crt".format(domain)))
-                    #  * domain.key
-                    os.symlink(
-                        os.path.join('./live', base_domain, "privkey.pem"),
-                        os.path.join(CERTBOT_FOLDER, "{}.key".format(domain)))
+                    if created:
+                        # create a docker secret
+                        secret = dfple_client.secret_create(
+                            '{}.pem'.format(domain),
+                            open(combined, 'rb').read())                        
 
-                    cert = os.path.join(CERTBOT_FOLDER, "{}.pem".format(domain))
-                    client.put(
-                        client.url(version, '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
-                        data=open(cert, 'rb').read(),
-                        headers={'Content-Type': 'application/octet-stream'})
+                        # remove secrets already attached to the dfp service
+                        # that are for the same domain.
+                        logger.debug('service_secrets222 : {}'.format(service_secrets))
+                        service_secrets = [x for x in service_secrets if not x['SecretName'].startswith(domain)] 
 
-    
-    client.get(client.url(version, '/reconfigure?{}'.format(
+                        # append the new secret
+                        secrets_changed = True
+                        service_secrets.append({
+                            'SecretID': secret.id,
+                            'SecretName': secret.name,
+                            'File': {
+                                'Name': 'cert-{}'.format(domain),
+                                'UID': '0',
+                                'GID': '0', 
+                                'Mode': 0}
+                            })
+                    else:
+                        # check that a already existing secret for the combined cert is attached to dfp service.
+                        found = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in service_secrets])
+                        logger.debug('found: {}'.format(found))
+                        if not found:
+                            secret = docker_client.secrets().list(filters={'name': '{}.pem'.format(domain)})[-1] 
+                            # append the secret
+                            secrets_changed = True
+                            service_secrets.append({
+                                'SecretID': secret.id,
+                                'SecretName': secret.name,
+                                'File': {
+                                    'Name': 'cert-{}'.format(domain),
+                                    'UID': '0',
+                                    'GID': '0', 
+                                    'Mode': 0}
+                                })   
+
+
+                if secrets_changed:
+                    logger.debug('secrets changed, updating...')
+                    # attach new secrets to dfp service
+                    dfple_client.service_update_secrets(service, service_secrets)
+
+    # proxy requests to docker-flow-proxy
+    dfp_client.get(dfp_client.url(version, '/reconfigure?{}'.format(
         '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
 
     return "OK"
