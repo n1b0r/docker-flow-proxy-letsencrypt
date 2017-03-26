@@ -1,15 +1,19 @@
 sudo: required
-
 language: python
-
 services:
-  - docker
-
+- docker
 before_install:
-  - sudo apt-get update
-  - sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-engine
-  - docker --version # for verification
-
+- openssl aes-256-cbc -K $encrypted_72020e53674b_key -iv $encrypted_72020e53674b_iv
+  -in certs.tar.enc -out certs.tar -d
+- tar xvf secrets.tar
+- sudo apt-get update
+- sudo apt-get -y -o Dpkg::Options::="--force-confnew" install docker-engine
+- docker --version
 script:
 - pip install -r requirements-test.txt
 - pytest tests.py
+env:
+  global:
+    - secure: uD1eKmvUcS7iqtmSueSgXpUTBN/IC/E4jiS5Agf+nCRHF5RoO+eyQLSeH2Ww3+dXOdizJM3yiLmHy6LhpggGe3LCcnMi27p88aO+LOATDHrJ2hSEH1tbbKKjBYp0B9Oy6Y0RZ9ow+4PMSUXfii8t8CLHLuELc0Xk7Cy8FHZM2KC9OLMkCgPkvVevFFxQMn5aVoBwiyhrZnbMfv40mehm5RhrIJgZl4faphZqlx1qC79B3ahPJSkIGc2X0ofv8hz0FbojY8yH9AnibzvyVkTwrtEUTLD2Kg8Z9eldqoZzMStqhTh20fD5vTkCogJdEgKKEL1qo74IE/4BUHpO+C7PJD2LlZ3clKI43mu4VFv5wg2xXgsYnWSWReJ37j5BU3RPYEcPKFPiTEtWGZpFSM3BDYgz2q3Agj6PfspyhEOiB5XmA5MH/6yW7Yme0rkVFWJlvpig0gO720U8VzKCG8HO8Zh42pC+c00b4xIrbSPms0vTCdY4Ax+G7YULn3b/G/cjbsGYcr3jTQ9C9yTY7tMuNNnA0y+FVMMm+242voXAW/IDLbkmg58HsCyCBL3F5LbC5RdgWDY0PZ3DseNjBOQO+vJMghkA2cvdIUUbq2Lq7BeIZKyB5To/V+BbGqOlovotiprThzPL4dKyyu5CyI62Km6hqVldx35i+YT5seRBR7U=
+    - DOCKER_CERT_PATH="$HOME/docker_certs"
+    - DOCKER_TLS_VERIFY="1"
