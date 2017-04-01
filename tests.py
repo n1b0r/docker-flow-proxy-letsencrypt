@@ -22,7 +22,7 @@ class DFPLETestCase(TestCase):
         self.proxy_le_service_name = 'proxy_le_{}'.format(self.test_name)
 
         self.docker_client = docker.from_env()
-        self.base_domain = 'dfple.nibor.me'
+        self.base_domain = 'a.dfple.nibor.me'
 
         try:
             self.docker_client.swarm.init()
