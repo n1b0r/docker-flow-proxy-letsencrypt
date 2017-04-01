@@ -191,6 +191,7 @@ class DFPLEOriginal(DFPLETestCase, Scenario):
             'constraints': ["node.role == manager"],
             'env': [
                 "DF_PROXY_SERVICE_NAME=proxy_{}".format(self.test_name),
+                "DF_SWARM_LISTENER_SERVICE_NAME=swarm_listener_{}".format(self.test_name),
                 "CERTBOT_OPTIONS=--staging",
                 "LOG=debug",
             ],
@@ -233,6 +234,7 @@ class DFPLESecret(DFPLETestCase, Scenario):
             'constraints': ["node.role == manager"],
             'env': [
                 "DF_PROXY_SERVICE_NAME=proxy_{}".format(self.test_name),
+                "DF_SWARM_LISTENER_SERVICE_NAME=swarm_listener_{}".format(self.test_name),
                 "CERTBOT_OPTIONS=--staging",
                 "LOG=debug",
             ],
@@ -287,6 +289,7 @@ class DFPLEUpdate(DFPLETestCase, Scenario):
             'constraints': ["node.role == manager"],
             'env': [
                 "DF_PROXY_SERVICE_NAME=proxy_{}".format(self.test_name),
+                "DF_SWARM_LISTENER_SERVICE_NAME=swarm_listener_{}".format(self.test_name),
                 "CERTBOT_OPTIONS=--staging",
                 "LOG=debug",
             ],

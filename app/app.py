@@ -21,8 +21,6 @@ logging.basicConfig(level=LEVELS.get(os.environ.get('LOG', 'info').lower()))
 
 logger = logging.getLogger('letsencrypt')
 
-DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
-DF_PROXY_SERVICE_BASE_URL = os.environ.get('DF_PROXY_SERVICE_BASE_URL')
 CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
 CERTBOT_OPTIONS = os.environ.get('CERTBOT_OPTIONS', '')
 CERTBOT_FOLDER = "/etc/letsencrypt/"
