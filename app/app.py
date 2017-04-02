@@ -145,12 +145,19 @@ def reconfigure(version):
 
     # proxy requests to docker-flow-proxy
     # sometimes we can get an error back from DFP, this can happen when DFP is not fully loaded.
-    # resend the request until response status code is 200
-    response = None
-    while response is None or response.status_code != 200:
-        logger.debug('forwarding request to docker-flow-proxy')
+    # resend the request until response status code is 200 (${RETRY} times waiting ${RETRY_INTERVAL} seconds between retries)
+    t = 0
+    while t < os.environ.get('RETRY', 10):
+        t += 1
+
+        logger.debug('forwarding request to docker-flow-proxy ({})'.format(t))
         response = dfp_client.get(dfp_client.url(version, '/reconfigure?{}'.format(
             '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))
+
+        if response.status_code == 200:
+            break
+
+        time.sleep(os.environ.get('RETRY_INTERVAL', 5))
 
     return "OK"
 
