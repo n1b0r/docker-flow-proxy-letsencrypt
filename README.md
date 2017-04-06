@@ -1,4 +1,4 @@
-# docker-flow-proxy letsencrypt 
+# docker-flow-proxy letsencrypt
 
 `docker-flow-proxy-letsencrypt` is a `docker-flow-proxy` companion that automatically create ~~and renew~~ certificates for your swarm services.
 
@@ -154,7 +154,20 @@ volumes:
 
 ### Environment variables
 
+| Name                           |      Description                                                                       | Default   |
+|--------------------------------|:--------------------------------------------------------------------------------------:|----------:|
+| CERTBOT_OPTIONS                | Custom options added to certbot command line (example: --staging)                      |           |
+| DF_PROXY_SERVICE_NAME          | Name of the docker-flow-proxy service (either SERVICE-NAME or STACK-NAME_SERVICE-NAME).| proxy     |
+| DF_SWARM_LISTENER_SERVICE_NAME | Name of the docker-flow-proxy service. Used to force cert renewal.                     | swarm-listener |
+| DOCKER_SOCKET_PATH             | Path to the docker socket. Required for docker secrets support.                        | /var/run/docker.sock      |
+| LOG                            | Logging level (debug, info, warning, error)                                            | info      |
+| RETRY                          | Number of forward request retries                                                      | 10        |
+| RETRY_INTERVAL                 | Interval (seconds) between forward request retries                                     | 5         |
+
+
+
   * `DF_PROXY_SERVICE_NAME`: `docker-flow-proxy` service name (either SERVICE-NAME or STACK-NAME_SERVICE-NAME).
+  * `DF_SWARM_LISTENER_SERVICE_NAME`: `docker-flow-swarm-listener` service name (either SERVICE-NAME or STACK-NAME_SERVICE-NAME).
   * `CERTBOT_OPTIONS`: custom options added to certbot command line (example: --staging).
   * `LOG`: logging level (debug, info, warning, error), defaults to info.
 
