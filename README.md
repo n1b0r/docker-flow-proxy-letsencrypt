@@ -22,6 +22,20 @@ Then you can choose how you want to use `docker-flow-proxy-letsencrypt`:
   * using volumes
   * using secrets
 
+
+### Environment variables
+
+| Name                           |      Description                                                                       | Default   |
+|--------------------------------|:--------------------------------------------------------------------------------------:|----------:|
+| CERTBOT_OPTIONS                | Custom options added to certbot command line (example: --staging)                      |           |
+| DF_PROXY_SERVICE_NAME          | Name of the docker-flow-proxy service (either SERVICE-NAME or STACK-NAME_SERVICE-NAME).| proxy     |
+| DF_SWARM_LISTENER_SERVICE_NAME | Name of the docker-flow-proxy service. Used to force cert renewal.                     | swarm-listener |
+| DOCKER_SOCKET_PATH             | Path to the docker socket. Required for docker secrets support.                        | /var/run/docker.sock      |
+| LOG                            | Logging level (debug, info, warning, error)                                            | info      |
+| RETRY                          | Number of forward request retries                                                      | 10        |
+| RETRY_INTERVAL                 | Interval (seconds) between forward request retries                                     | 5         |
+
+
 ### Using volumes
 
 ```
@@ -151,19 +165,6 @@ volumes:
     external: true
 
 ```
-
-### Environment variables
-
-| Name                           |      Description                                                                       | Default   |
-|--------------------------------|:--------------------------------------------------------------------------------------:|----------:|
-| CERTBOT_OPTIONS                | Custom options added to certbot command line (example: --staging)                      |           |
-| DF_PROXY_SERVICE_NAME          | Name of the docker-flow-proxy service (either SERVICE-NAME or STACK-NAME_SERVICE-NAME).| proxy     |
-| DF_SWARM_LISTENER_SERVICE_NAME | Name of the docker-flow-proxy service. Used to force cert renewal.                     | swarm-listener |
-| DOCKER_SOCKET_PATH             | Path to the docker socket. Required for docker secrets support.                        | /var/run/docker.sock      |
-| LOG                            | Logging level (debug, info, warning, error)                                            | info      |
-| RETRY                          | Number of forward request retries                                                      | 10        |
-| RETRY_INTERVAL                 | Interval (seconds) between forward request retries                                     | 5         |
-
 
 ### service stack
 
