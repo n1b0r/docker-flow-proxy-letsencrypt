@@ -165,13 +165,6 @@ volumes:
 | RETRY_INTERVAL                 | Interval (seconds) between forward request retries                                     | 5         |
 
 
-
-  * `DF_PROXY_SERVICE_NAME`: `docker-flow-proxy` service name (either SERVICE-NAME or STACK-NAME_SERVICE-NAME).
-  * `DF_SWARM_LISTENER_SERVICE_NAME`: `docker-flow-swarm-listener` service name (either SERVICE-NAME or STACK-NAME_SERVICE-NAME).
-  * `CERTBOT_OPTIONS`: custom options added to certbot command line (example: --staging).
-  * `LOG`: logging level (debug, info, warning, error), defaults to info.
-
-
 ### service stack
 
 ```
