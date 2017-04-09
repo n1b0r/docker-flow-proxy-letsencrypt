@@ -16,13 +16,13 @@ class DFPLETestCase(TestCase):
           * DFP
           * DFSL
         """
-           
+
         time.sleep(10)
         self.test_name = os.environ.get('CI_BUILD_REF_SLUG', 'test')
         self.proxy_le_service_name = 'proxy_le_{}'.format(self.test_name)
 
         self.docker_client = docker.from_env()
-        self.base_domain = 'tt.test.dfple.nibor.me'
+        self.base_domain = 'a.dfple.nibor.me'
 
         try:
             self.docker_client.swarm.init()
@@ -41,9 +41,9 @@ class DFPLETestCase(TestCase):
             'constraints': [],
             'endpoint_spec': docker.types.EndpointSpec(
                 ports={80: 80, 443: 443, 8080: 8080}),
-            'env': [ 
+            'env': [
                 "LISTENER_ADDRESS=swarm_listener_{}".format(self.test_name),
-                "MODE=swarm", 
+                "MODE=swarm",
                 "SERVICE_NAME=proxy_{}".format(self.test_name) ],
             'networks': [self.network_name]
         }
@@ -56,19 +56,19 @@ class DFPLETestCase(TestCase):
             'constraints': ["node.role == manager"],
             'endpoint_spec': docker.types.EndpointSpec(
                 ports={8081: 8080}),
-            'env': [ 
+            'env': [
                 "DF_NOTIFY_CREATE_SERVICE_URL=http://proxy_le_{}:8080/v1/docker-flow-proxy-letsencrypt/reconfigure".format(self.test_name),
                 "DF_NOTIFY_REMOVE_SERVICE_URL=http://proxy_{}:8080/v1/docker-flow-proxy/remove".format(self.test_name)],
             'mounts': ['/var/run/docker.sock:/var/run/docker.sock:rw'],
             'networks': [self.network_name]
         }
-        
+
         # start services
         self.services = []
-        
+
         self.dfp_service = self.docker_client.services.create(**dfp_service)
         self.services.append(self.dfp_service)
-        
+
         self.dfsl_service = self.docker_client.services.create(**dfsl_service)
         self.services.append(self.dfsl_service)
 
@@ -92,12 +92,12 @@ class DFPLETestCase(TestCase):
 
         _start = time.time()
         _current = time.time()
-        
+
         print '-------------'
         print 'Searching in config for', '\n\t -{}'.format('\n\t -'.join(texts))
 
         while _current < _start + timeout:
-            
+
             config = self.get_conf()
             if config:
                 if all([t in config for t in texts]):
@@ -127,8 +127,8 @@ class DFPLETestCase(TestCase):
         print('executing cmd', cmd)
         cmd = cmd.split(' ')
         print('executing cmd', cmd)
-        proc = subprocess.Popen(cmd, 
-                                   stdout=subprocess.PIPE, 
+        proc = subprocess.Popen(cmd,
+                                   stdout=subprocess.PIPE,
                                    stderr=subprocess.PIPE)
         (out, err) = proc.communicate()
         print "output:", out, err
@@ -191,6 +191,7 @@ class DFPLEOriginal(DFPLETestCase, Scenario):
             'constraints': ["node.role == manager"],
             'env': [
                 "DF_PROXY_SERVICE_NAME=proxy_{}".format(self.test_name),
+                "DF_SWARM_LISTENER_SERVICE_NAME=swarm_listener_{}".format(self.test_name),
                 "CERTBOT_OPTIONS=--staging",
                 "LOG=debug",
             ],
@@ -233,6 +234,7 @@ class DFPLESecret(DFPLETestCase, Scenario):
             'constraints': ["node.role == manager"],
             'env': [
                 "DF_PROXY_SERVICE_NAME=proxy_{}".format(self.test_name),
+                "DF_SWARM_LISTENER_SERVICE_NAME=swarm_listener_{}".format(self.test_name),
                 "CERTBOT_OPTIONS=--staging",
                 "LOG=debug",
             ],
@@ -287,6 +289,7 @@ class DFPLEUpdate(DFPLETestCase, Scenario):
             'constraints': ["node.role == manager"],
             'env': [
                 "DF_PROXY_SERVICE_NAME=proxy_{}".format(self.test_name),
+                "DF_SWARM_LISTENER_SERVICE_NAME=swarm_listener_{}".format(self.test_name),
                 "CERTBOT_OPTIONS=--staging",
                 "LOG=debug",
             ],
@@ -327,7 +330,7 @@ class DFPLEUpdate(DFPLETestCase, Scenario):
 
         # revoke certs
         #   - get dfple container
-        container = self.docker_client.containers.list(filters={'name': self.proxy_le_service_name}) 
+        container = self.docker_client.containers.list(filters={'name': self.proxy_le_service_name})
         if len(container):
             container = container[0]
         else:
@@ -361,7 +364,7 @@ class DFPLEUpdate(DFPLETestCase, Scenario):
         texts = [
             'bind *:443 ssl crt /run/secrets/cert-{0}.{1} crt /run/secrets/cert-{0}2.{1}'.format(self.test_name, self.base_domain)
         ]
-        
+
         self.assertTrue(self.wait_until_found_in_config(texts))
 
         service = self.docker_client.services.get(self.dfp_service.id)

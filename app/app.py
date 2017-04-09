@@ -19,10 +19,8 @@ LEVELS = {'debug': logging.DEBUG,
 
 logging.basicConfig(level=LEVELS.get(os.environ.get('LOG', 'info').lower()))
 
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('letsencrypt')
 
-DF_NOTIFY_CREATE_SERVICE_URL = os.environ.get('DF_NOTIFY_CREATE_SERVICE_URL')
-DF_PROXY_SERVICE_BASE_URL = os.environ.get('DF_PROXY_SERVICE_BASE_URL')
 CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
 CERTBOT_OPTIONS = os.environ.get('CERTBOT_OPTIONS', '')
 CERTBOT_FOLDER = "/etc/letsencrypt/"
@@ -48,15 +46,15 @@ def acme_challenge(path):
 def reconfigure(version):
 
     dfp_client = DockerFlowProxyAPIClient()
-    
+
     args = request.args
 
     if version != 1:
         logger.error('Unable to use version : {}. Forwarding initial request to docker-flow-proxy service.'.format(version))
     else:
-        
+
         logger.info('request for service: {}'.format(args.get('serviceName')))
-        
+
         # Check if the newly registered service is usign letsencrypt companion.
         # Labels required:
         #   * com.df.letsencrypt.host
@@ -79,7 +77,7 @@ def reconfigure(version):
                         cert = [x for x in certs if '.pem' if x][0]
                         dfp_client.put(
                             dfp_client.url(
-                                version, 
+                                version,
                                 '/cert?certName={}&distribute=true'.format(os.path.basename(cert))),
                             data=open(cert, 'rb').read(),
                             headers={'Content-Type': 'application/octet-stream'})
@@ -96,17 +94,17 @@ def reconfigure(version):
                 # for each combined certificates
                 for domain, certs in certificates.items():
                     combined = [x for x in certs if '.pem' in x][0]
-                    
+
                     if created:
                         # create a docker secret
                         secret = dfple_client.secret_create(
                             '{}.pem'.format(domain),
-                            open(combined, 'rb').read())                        
+                            open(combined, 'rb').read())
 
                         # remove secrets already attached to the dfp service
                         # that are for the same domain.
                         logger.debug('service_secrets222 : {}'.format(service_secrets))
-                        service_secrets = [x for x in service_secrets if not x['SecretName'].startswith(domain)] 
+                        service_secrets = [x for x in service_secrets if not x['SecretName'].startswith(domain)]
 
                         # append the new secret
                         secrets_changed = True
@@ -116,7 +114,7 @@ def reconfigure(version):
                             'File': {
                                 'Name': 'cert-{}'.format(domain),
                                 'UID': '0',
-                                'GID': '0', 
+                                'GID': '0',
                                 'Mode': 0}
                             })
                     else:
@@ -124,7 +122,7 @@ def reconfigure(version):
                         found = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in service_secrets])
                         logger.debug('found: {}'.format(found))
                         if not found:
-                            secret = docker_client.secrets().list(filters={'name': '{}.pem'.format(domain)})[-1] 
+                            secret = docker_client.secrets().list(filters={'name': '{}.pem'.format(domain)})[-1]
                             # append the secret
                             secrets_changed = True
                             service_secrets.append({
@@ -133,9 +131,9 @@ def reconfigure(version):
                                 'File': {
                                     'Name': 'cert-{}'.format(domain),
                                     'UID': '0',
-                                    'GID': '0', 
+                                    'GID': '0',
                                     'Mode': 0}
-                                })   
+                                })
 
 
                 if secrets_changed:
@@ -144,8 +142,20 @@ def reconfigure(version):
                     dfple_client.service_update_secrets(service, service_secrets)
 
     # proxy requests to docker-flow-proxy
-    dfp_client.get(dfp_client.url(version, '/reconfigure?{}'.format(
-        '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))    
+    # sometimes we can get an error back from DFP, this can happen when DFP is not fully loaded.
+    # resend the request until response status code is 200 (${RETRY} times waiting ${RETRY_INTERVAL} seconds between retries)
+    t = 0
+    while t < os.environ.get('RETRY', 10):
+        t += 1
+
+        logger.debug('forwarding request to docker-flow-proxy ({})'.format(t))
+        response = dfp_client.get(dfp_client.url(version, '/reconfigure?{}'.format(
+            '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))
+
+        if response.status_code == 200:
+            break
+
+        time.sleep(os.environ.get('RETRY_INTERVAL', 5))
 
     return "OK"
 
