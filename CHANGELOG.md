@@ -1,5 +1,8 @@
 # docker-flow-proxy-letsencrypt
 
+## 0.4
+* fix typo in entrypoint.sh - #6
+
 ## 0.3
 * RETRY and RETRY_INTERVAL
 * automatic certificates renewal using crond
