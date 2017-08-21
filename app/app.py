@@ -95,15 +95,24 @@ def reconfigure(version):
                 for domain, certs in certificates.items():
                     combined = [x for x in certs if '.pem' in x][0]
 
-                    if created:
+                    # check that there is an existing secret for the combined cert
+                    secrets = docker_client.secrets().list(filters={'name': 'cert-{}.pem'.format(domain)})
+                    found = len(secrets) > 0
+
+                    # check that an already existing secret for the combined cert is attached to dfp service.
+                    foundAttached = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in service_secrets])
+                    logger.debug('created: {}, attached: {}'.format(created, foundAttached))
+
+                    if created or not found:
                         # create a docker secret
                         secret = dfple_client.secret_create(
-                            '{}.pem'.format(domain),
-                            open(combined, 'rb').read())
+                        '{}.pem'.format(domain),
+                        open(combined, 'rb').read())
 
+                    if created or not foundAttached:
                         # remove secrets already attached to the dfp service
                         # that are for the same domain.
-                        logger.debug('service_secrets222 : {}'.format(service_secrets))
+                        logger.debug('service_secrets: {}'.format(service_secrets))
                         service_secrets = [x for x in service_secrets if not x['SecretName'].startswith(domain)]
 
                         # append the new secret
@@ -117,24 +126,6 @@ def reconfigure(version):
                                 'GID': '0',
                                 'Mode': 0}
                             })
-                    else:
-                        # check that a already existing secret for the combined cert is attached to dfp service.
-                        found = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in service_secrets])
-                        logger.debug('found: {}'.format(found))
-                        if not found:
-                            secret = docker_client.secrets().list(filters={'name': '{}.pem'.format(domain)})[-1]
-                            # append the secret
-                            secrets_changed = True
-                            service_secrets.append({
-                                'SecretID': secret.id,
-                                'SecretName': secret.name,
-                                'File': {
-                                    'Name': 'cert-{}'.format(domain),
-                                    'UID': '0',
-                                    'GID': '0',
-                                    'Mode': 0}
-                                })
-
 
                 if secrets_changed:
                     logger.debug('secrets changed, updating...')
