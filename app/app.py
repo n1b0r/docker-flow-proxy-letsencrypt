@@ -18,7 +18,7 @@ LEVELS = {'debug': logging.DEBUG,
           'critical': logging.CRITICAL}
 
 logging.basicConfig(level=logging.ERROR, format="%(asctime)s;%(levelname)s;%(message)s")
-logging.getLogger('letsencrypt').setLevel(os.environ.get('LOG', 'info').lower())
+logging.getLogger('letsencrypt').setLevel(LEVELS[os.environ.get('LOG', 'info').lower()])
 logger = logging.getLogger('letsencrypt')
 
 CERTBOT_WEBROOT_PATH = os.environ.get('CERTBOT_WEBROOT_PATH', '/opt/www')
