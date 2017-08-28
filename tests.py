@@ -169,7 +169,7 @@ class Scenario():
             certs_path = "/certs/"
             ext = '.pem'
 
-        m = 'ssl crt {1}{0}.{3}{2} crt {1}{0}2.{3}{2}'.format(self.test_name, certs_path, ext, self.base_domain)
+        m = 'ssl crt-list /cfg/crt-list.txt'
         self.assertTrue(self.wait_until_found_in_config([m]))
 
 
@@ -362,7 +362,7 @@ class DFPLEUpdate(DFPLETestCase, Scenario):
         time.sleep(30)
 
         texts = [
-            'bind *:443 ssl crt /run/secrets/cert-{0}.{1} crt /run/secrets/cert-{0}2.{1}'.format(self.test_name, self.base_domain)
+            'bind *:443 ssl crt-list /cfg/crt-list.txt'.format(self.test_name, self.base_domain)
         ]
 
         self.assertTrue(self.wait_until_found_in_config(texts))
