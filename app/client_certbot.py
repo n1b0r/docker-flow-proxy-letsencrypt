@@ -5,7 +5,8 @@ logger = logging.getLogger('letsencrypt')
 
 
 class CertbotClient():
-    def __init__(self, webroot_path, options):
+    def __init__(self, challenge, webroot_path=None, options=None):
+        self.challenge = challenge
         self.webroot_path = webroot_path
         self.options = options
 
@@ -27,20 +28,25 @@ class CertbotClient():
         """
         Update certifacts
         """
+
+        c = ''
+        if self.challenge == 'webroot':
+        	c = "--webroot --webroot-path {}".format(self.webroot_path)
+
         output, error, code = self.run("""certbot certonly \
                     --agree-tos \
                     --domains {domains} \
                     --email {email} \
                     --expand \
                     --noninteractive \
-                    --webroot \
-                    --webroot-path {webroot_path} \
+                    {challenge}
                     --debug \
                     {options}""".format(
                         domains=','.join(domains),
                         email=email,
                         webroot_path=self.webroot_path,
-                        options=self.options).split())
+                        options=self.options,
+                        challenge=c).split())
 
         ret_error = False
         ret_created = True

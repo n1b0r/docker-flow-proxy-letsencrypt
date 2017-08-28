@@ -22,7 +22,10 @@ class DFPLEClient():
         # self.docker_socket_path = kwargs.get('docker_socket_path')
         # XXX-YYYYMMDD-HHMMSS
         self.size_secret = 64 - 16
-        self.certbot = CertbotClient(kwargs.get('certbot_webroot'), kwargs.get('certbot_options'))
+        self.certbot = CertbotClient(
+            kwargs.get('certbot_challenge'),
+            webroot_path=kwargs.get('certbot_webroot_path'),
+            options=kwargs.get('certbot_options'))
         self.certbot_folder = kwargs.get('certbot_path')
         self.dfp_service_name = kwargs.get('dfp_service_name', None)
 
