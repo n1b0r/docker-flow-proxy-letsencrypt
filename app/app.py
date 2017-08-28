@@ -7,7 +7,7 @@ import requests
 import subprocess
 import time
 
-from dfple import *
+from client_dfple import *
 from flask import Flask, request, send_from_directory
 
 
