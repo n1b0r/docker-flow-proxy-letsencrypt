@@ -294,6 +294,6 @@ class DFPLEClient():
                             'Mode': 0}
                         })
 
-        if secret_changed:
+        if secrets_changed:
             logger.debug('secrets changed, updating dfp service...')
             self.dfp.update(name=self.dfp.attrs['Spec']['Name'], networks=self.dfp.attrs['Spec']['Networks'], secrets=self.secrets_dfp)
