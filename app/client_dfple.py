@@ -231,6 +231,7 @@ class DFPLEClient():
 
         self.certs, created = self.generate_certificates(self.domains, self.email)
 
+        secrets_changed = False
         for domain, certs in self.certs.items():
 
             combined = [x for x in certs if '.pem' in x]
@@ -274,7 +275,6 @@ class DFPLEClient():
                 # else:
                 #     secret = secrets[0]
 
-                self.secrets_changed = False
                 if created or not self.secret_combined_attached:
                     # attach secret
                     # secret = self.docker_client.secrets.list(filters={'name': '{}.pem'.format(domain)})[-1]
@@ -294,5 +294,6 @@ class DFPLEClient():
                             'Mode': 0}
                         })
 
-                    logger.debug('secrets changed, updating dfp service...')
-                    self.dfp.update(name=self.dfp.attrs['Spec']['Name'], networks=self.dfp.attrs['Spec']['Networks'], secrets=self.secrets_dfp)
+        if secret_changed:
+            logger.debug('secrets changed, updating dfp service...')
+            self.dfp.update(name=self.dfp.attrs['Spec']['Name'], networks=self.dfp.attrs['Spec']['Networks'], secrets=self.secrets_dfp)
