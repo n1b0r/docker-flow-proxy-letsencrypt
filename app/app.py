@@ -61,7 +61,7 @@ def reconfigure(version):
             logger.info('letsencrypt support enabled.')
 
             args = {
-                'domains': args['letsencrypt.host'],
+                'domains': args['letsencrypt.host'].split(','),
                 'email': args['letsencrypt.email'],
                 'certbot_path': os.environ.get('CERTBOT_PATH', '/etc/letsencrypt'),
                 'certbot_challenge': os.environ.get('CERTBOT_CHALLENGE', ''),
@@ -83,7 +83,7 @@ def reconfigure(version):
         logger.debug('forwarding request to docker-flow-proxy ({})'.format(t))
         try:
             response = dfp_client.get(dfp_client.url(version, '/reconfigure?{}'.format(
-                '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))
+                '&'.join(['{}={}'.format(k, v) for k, v in request.args.items()]))))
             if response.status_code == 200:
                 break
         except Exception, e:
