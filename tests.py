@@ -18,7 +18,7 @@ class DFPLETestCase(TestCase):
         """
 
         time.sleep(10)
-        self.test_name = os.environ.get('CI_COMMIT_REF_SLUG', 'test')
+        self.test_name = os.environ.get('CI_BUILD_REF_SLUG', os.environ.get('CI_COMMIT_REF_SLUG', 'test'))
         self.proxy_le_service_name = 'proxy_le_{}'.format(self.test_name)
 
         self.docker_client = docker.from_env()
