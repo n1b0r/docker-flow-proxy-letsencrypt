@@ -19,7 +19,7 @@ class DFPLEClient():
         logger.debug('> init')
 
         self.docker_client = kwargs.get('docker_client')
-        # self.docker_socket_path = kwargs.get('docker_socket_path')
+        self.docker_socket_path = kwargs.get('docker_socket_path')
         # XXX-YYYYMMDD-HHMMSS
         self.size_secret = 64 - 16
         self.certbot = CertbotClient(
@@ -184,16 +184,15 @@ class DFPLEClient():
         secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
         return secret_name
 
-    # def service_update_secrets(self, service, secrets):
-    #     service.update(name=service.attrs['Spec']['Name'], networks=service.attrs['Spec']['Networks'], secrets=secrets)
-    #     # spec = service.attrs['Spec']
-    #     # container_spec = spec['TaskTemplate']['ContainerSpec']
-    #     # container_spec['Secrets'] = secrets
+    def service_update_secrets(self, service, secrets):
+        spec = service.attrs['Spec']
+        container_spec = spec['TaskTemplate']['ContainerSpec']
+        container_spec['Secrets'] = secrets
 
-    #     # cmd = """curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/1.25/services/{service_id}/update?version={version} -d '{data}'""".format(
-    #     #     data=json.dumps(spec), socket=self.docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
-    #     # logger.debug('EXEC {}'.format(cmd))
-    #     # code = os.system(cmd)
+        cmd = """curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/1.25/services/{service_id}/update?version={version} -d '{data}'""".format(
+            data=json.dumps(spec), socket=self.docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
+        logger.debug('EXEC {}'.format(cmd))
+        code = os.system(cmd)
 
     def secret_create(self, secret_name, secret_data):
 
@@ -296,4 +295,5 @@ class DFPLEClient():
 
         if secrets_changed:
             logger.debug('secrets changed, updating dfp service...')
-            self.dfp.update(name=self.dfp.attrs['Spec']['Name'], networks=self.dfp.attrs['Spec']['Networks'], secrets=self.secrets_dfp)
+            # self.dfp.update(name=self.dfp.attrs['Spec']['Name'], networks=self.dfp.attrs['Spec']['Networks'], secrets=self.secrets_dfp)
+            self.service_update_secrets(self.dfp, self.secrets_dfp)

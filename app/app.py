@@ -68,6 +68,7 @@ def reconfigure(version):
                 'certbot_webroot_path': CERTBOT_WEBROOT_PATH,
                 'certbot_options': os.environ.get('CERTBOT_OPTIONS', ''),
                 'docker_client': docker_client,
+                'docker_socket_path': docker_socket_path,
                 'dfp_service_name': os.environ.get('DF_PROXY_SERVICE_NAME'),
             }
 

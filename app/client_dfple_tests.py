@@ -245,7 +245,7 @@ class SecretsTestCase(DFPLEClientTestCase):
 
 		with patch('client_dfple.DFPLEClient.secret_create', return_value=mocked_data['secret_created']), \
 			patch('client_dfple.DFPLEClient.service_dfp', return_value=mocked_data['service_dfp']), \
-			patch('docker.models.services.Service.update', return_value=None), \
+			patch('client_dfple.DFPLEClient.service_update_secrets', return_value=None), \
 			patch('docker.models.secrets.SecretCollection.list', return_value=[]):
 
 			# create the client
@@ -285,7 +285,7 @@ class SecretsTestCase(DFPLEClientTestCase):
 
 		with patch('client_dfple.DFPLEClient.secret_create', return_value=mocked_data['secret_created']), \
 			patch('client_dfple.DFPLEClient.service_dfp', return_value=mocked_data['service_dfp']), \
-			patch('docker.models.services.Service.update', return_value=None), \
+			patch('client_dfple.DFPLEClient.service_update_secrets', return_value=None), \
 			patch('docker.models.secrets.SecretCollection.list', return_value=[]):
 
 			# initialize context - create certs files.
