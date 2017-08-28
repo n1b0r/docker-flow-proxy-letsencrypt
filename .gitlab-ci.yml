@@ -11,7 +11,7 @@ variables:
   IMAGE_NAME: nib0r/docker-flow-proxy-letsencrypt
   GITLAB_IMAGE_NAME: docker.nibor.me/robin/docker-flow-proxy-letsencrypt
 
-functional_tests:
+functional_tests_manual:
   stage: test
   variables:
     DOCKER_CERT_PATH: ${_DOCKER_CERT_PATH}
@@ -26,8 +26,23 @@ functional_tests:
     - ks2.nibor.me
   when: manual
   only:
-    - develop
     - /^feature-.*$/
+
+functional_tests:
+  stage: test
+  variables:
+    DOCKER_CERT_PATH: ${_DOCKER_CERT_PATH}
+    DOCKER_HOST: ${_DOCKER_HOST}
+    DOCKER_MACHINE_NAME: ${_DOCKER_MACHINE_NAME}
+    DOCKER_TLS_VERIFY: ${_DOCKER_TLS_VERIFY}
+  script:
+    - pip install -r requirements-test.txt --upgrade
+    - pytest tests.py
+  tags:
+    - shell
+    - ks2.nibor.me
+  only:
+    - develop
     - master
     - tags
 
