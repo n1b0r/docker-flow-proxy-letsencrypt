@@ -26,6 +26,7 @@ Then you can choose how you want to use `docker-flow-proxy-letsencrypt`:
 | Name                           |      Description                                                                       | Default   |
 |--------------------------------|:--------------------------------------------------------------------------------------:|----------:|
 | CERTBOT_OPTIONS                | Custom options added to certbot command line (example: --staging)                      |           |
+| CERTBOT_CHALLENGE              | Use a custom certbot challenge. Only webroot is currently implemented, use CERTBOT_OPTIONS to pass extra options (see [#11](https://github.com/n1b0r/docker-flow-proxy-letsencrypt/issues/11))  | webroot   |
 | DF_PROXY_SERVICE_NAME          | Name of the docker-flow-proxy service (either SERVICE-NAME or STACK-NAME_SERVICE-NAME).| proxy     |
 | DF_SWARM_LISTENER_SERVICE_NAME | Name of the docker-flow-proxy service. Used to force cert renewal.                     | swarm-listener |
 | DOCKER_SOCKET_PATH             | Path to the docker socket. Required for docker secrets support.                        | /var/run/docker.sock      |
@@ -82,6 +83,7 @@ services:
       # - CERTBOT_OPTIONS=--staging
     volumes:
       # create a dedicated volume for letsencrypt folder.
+      # IMPORTANT: you MUST use this volume if you need persistent certificates.
       # You will be able to link this volume to another service that also needs certificates
       - le-certs:/etc/letsencrypt
     deploy:
@@ -147,6 +149,7 @@ services:
       # link docker socket to activate secrets support.
       - /var/run/docker.sock:/var/run/docker.sock
       # create a dedicated volume for letsencrypt folder.
+      # IMPORTANT: you MUST use this volume if you need persistent certificates.
       # You will be able to link this volume to another service that also needs certificates.
       - le-certs:/etc/letsencrypt
     deploy:
