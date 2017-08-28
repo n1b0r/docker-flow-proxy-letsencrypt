@@ -44,6 +44,7 @@ class DFPLETestCase(TestCase):
             'env': [
                 "LISTENER_ADDRESS=swarm_listener_{}".format(self.test_name),
                 "MODE=swarm",
+                "DEBUG=true",
                 "SERVICE_NAME=proxy_{}".format(self.test_name) ],
             'networks': [self.network_name]
         }
