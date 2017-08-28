@@ -236,7 +236,7 @@ class DFPLEClient():
             combined = [x for x in certs if '.pem' in x]
             if len(combined) == 0:
                 logger.error('Combined certificate not found. Check logs for errors.')
-                return False
+                raise Exception('Combined cert not found')
             combined = combined[0]
 
             if self.docker_client == None:
