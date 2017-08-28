@@ -81,12 +81,14 @@ def reconfigure(version):
         t += 1
 
         logger.debug('forwarding request to docker-flow-proxy ({})'.format(t))
-        response = dfp_client.get(dfp_client.url(version, '/reconfigure?{}'.format(
-            '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))
-
-        if response.status_code == 200:
-            break
-
+        try:
+            response = dfp_client.get(dfp_client.url(version, '/reconfigure?{}'.format(
+                '&'.join(['{}={}'.format(k, v) for k, v in args.items()]))))
+            if response.status_code == 200:
+                break
+        except Exception, e:
+            logger.error('Error while trying to forward request: {}'.format(e))
+        logger.debug('waiting for retry')
         time.sleep(os.environ.get('RETRY_INTERVAL', 5))
 
     return "OK"
