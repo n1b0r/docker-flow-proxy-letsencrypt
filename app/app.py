@@ -31,6 +31,18 @@ if docker_socket_path and os.path.exists(docker_socket_path):
         base_url='unix:/{}'.format(docker_socket_path),
         version='1.25')
 
+args = {
+    'certbot_path': os.environ.get('CERTBOT_PATH', '/etc/letsencrypt'),
+    'certbot_challenge': os.environ.get('CERTBOT_CHALLENGE', 'webroot'),
+    'certbot_webroot_path': CERTBOT_WEBROOT_PATH,
+    'certbot_options': os.environ.get('CERTBOT_OPTIONS', ''),
+    'docker_client': docker_client,
+    'docker_socket_path': docker_socket_path,
+    'dfp_service_name': os.environ.get('DF_PROXY_SERVICE_NAME'),
+}
+
+client = DFPLEClient(**args)
+
 app = Flask(__name__)
 
 @app.route("/.well-known/acme-challenge/<path>")
@@ -58,20 +70,7 @@ def reconfigure(version):
         if all([label in args.keys() for label in required_labels]):
             logger.info('letsencrypt support enabled.')
 
-            args = {
-                'domains': args['letsencrypt.host'].split(','),
-                'email': args['letsencrypt.email'],
-                'certbot_path': os.environ.get('CERTBOT_PATH', '/etc/letsencrypt'),
-                'certbot_challenge': os.environ.get('CERTBOT_CHALLENGE', 'webroot'),
-                'certbot_webroot_path': CERTBOT_WEBROOT_PATH,
-                'certbot_options': os.environ.get('CERTBOT_OPTIONS', ''),
-                'docker_client': docker_client,
-                'docker_socket_path': docker_socket_path,
-                'dfp_service_name': os.environ.get('DF_PROXY_SERVICE_NAME'),
-            }
-
-            client = DFPLEClient(**args)
-            client.process()
+            client.process(args['letsencrypt.host'].split(','), args['letsencrypt.email'])
 
     # proxy requests to docker-flow-proxy
     # sometimes we can get an error back from DFP, this can happen when DFP is not fully loaded.
