@@ -216,3 +216,46 @@ class SecretsTestCase(DFPLEClientTestCase):
 			for d in self.domains:
 				self.assertTrue(any([d in x.name for x in self.client.secrets]))
 				self.assertTrue(any([d == x['SecretName'] for x in self.client.secrets_dfp]))
+
+	def test_secret_created_not_attached(self):
+		"""
+		initial context:
+		  * certs are already present in certbot volume
+		  * secrets are existing in the swarm
+		  * proxy stack has been redeployed, secret needs to be attached
+		"""
+		mocked_data = {
+			'service_dfp': docker.models.services.Service(
+				attrs={'Spec': {'Name': 'proxy', 'TaskTemplate': {'ContainerSpec': {'Image': '', 'Secrets': []}}, 'Networks': [],}}
+			),
+			'secret_created': docker.models.secrets.Secret(attrs={'Spec': {'Name': self.domains[0]}}),
+			'secrets_initial': [docker.models.secrets.Secret(attrs={'Spec': {'Name': '{}.pem'.format(self.domains[0]), 'File': {'Name': 'cert-{}'.format(self.domains[0])}}})]
+		}
+
+		with patch('client_dfple.DFPLEClient.secret_create', return_value=mocked_data['secret_created']), \
+			patch('client_dfple.DFPLEClient.service_dfp', return_value=mocked_data['service_dfp']), \
+			patch('client_dfple.DFPLEClient.service_update_secrets', return_value=None), \
+			patch('docker.models.secrets.SecretCollection.list', return_value=mocked_data['secrets_initial']):
+
+			# initialize context - create certs files.
+			self.letsencrypt_mock(self.domains, None, None, None, tmp_files=['privkey.pem', 'fullchain.pem', 'combined.pem'])
+
+			# create the client
+			self.client = DFPLEClient(**self.client_attrs)
+
+			# check certs exist
+			for d in self.domains:
+				self.assertTrue(any(['{}.pem'.format(d) in x for x in self.client.certs[d]]))
+
+			# check secrets found and not attached
+			for d in self.domains:
+				self.assertTrue(any([d in x.name for x in self.client.secrets]))
+				self.assertFalse(any([d == x['SecretName'] for x in self.client.secrets_dfp]))
+
+			with patch.object(self.client.certbot, 'run', lambda cmd: self.letsencrypt_mock([], CERTBOT_OUTPUT['null'], '', 0)):
+				self.client.process()
+
+			# check secrets found and attached
+			for d in self.domains:
+				self.assertTrue(any([d in x.name for x in self.client.secrets]))
+				self.assertTrue(any(['{}.pem'.format(d) == x['SecretName'] for x in self.client.secrets_dfp]))
