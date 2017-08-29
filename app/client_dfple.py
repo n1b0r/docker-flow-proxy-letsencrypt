@@ -22,62 +22,81 @@ class DFPLEClient():
         self.docker_socket_path = kwargs.get('docker_socket_path')
         # XXX-YYYYMMDD-HHMMSS
         self.size_secret = 64 - 16
+
         self.certbot = CertbotClient(
             kwargs.get('certbot_challenge'),
             webroot_path=kwargs.get('certbot_webroot_path'),
             options=kwargs.get('certbot_options'))
         self.certbot_folder = kwargs.get('certbot_path')
+
         self.dfp_service_name = kwargs.get('dfp_service_name', None)
 
         self.dfp_client = DockerFlowProxyAPIClient()
 
-        self.domains = kwargs.get('domains', [])
-        self.email = kwargs.get('email')
-        self.certs = {}
-        self.certs_created = False
-        self.secrets = {}
-        self.secrets_created = False
+        # self.domains = kwargs.get('domains', [])
+        # self.email = kwargs.get('email')
+        # self.certs = {}
+        # self.certs_created = False
+        # self.secrets = {}
+        # self.secrets_created = False
 
-        self.initial_checks()
+        # self.initial_checks()
 
 
-    def initial_checks(self):
-
-        # check certs
-        self.check_certs()
-
-        if self.docker_client is not None:
-
-            # get secrets
-            self.check_secrets()
-
-            # get dfp service secrets
-            self.check_secrets_dfp()
-
-    def check_certs(self):
-        logger.debug('> check_certs')
-        self.certs = {}
-        for domain in self.domains:
-            self.certs[domain] = []
+    def certs(self, domains):
+        certs = {}
+        for domain in domains:
+            certs[domain] = []
             for cert_type, cert_extension in cert_types:
                 dest_file = os.path.join(self.certbot_folder, "{}.{}".format(domain, cert_extension))
                 if os.path.exists(dest_file):
-                    self.certs[domain].append(dest_file)
+                    certs[domain].append(dest_file)
+        return certs
 
-        logger.debug('< certs={}'.format(self.certs))
-    def check_secrets(self):
-        logger.debug('> check_secrets')
-        self.secrets = self.docker_client.secrets.list()
-        logger.debug('< secrets={}'.format(self.secrets))
+    def secrets(self, domains=None):
+        secrets = []
+        attrs = {}
+        if domains is None:
+            domains = []
+        for domain in domains:
+            attrs['filters'] = {"name": self.get_secret_name_short('{}.pem'.format(domain))}
+            secret.append(self.docker_client.secrets.list(**attrs))
+        return secrets
 
-    def check_secrets_dfp(self):
-        logger.debug('> check_secrets_dfp')
-        self.secrets_dfp = []
-        # get current dfp secrets
-        self.dfp = self.service_dfp()
-        self.secrets_dfp = self.dfp.attrs['Spec']['TaskTemplate']['ContainerSpec'].get('Secrets', [])
-        logger.debug('< secrets_dfp={}'.format(self.secrets_dfp))
+    def services(self, name, exact_match=True):
+        services = self.docker_client.services.list(
+            filters={'name': name})
+        if exact_match:
+            services = [x for x in services if x.name == name]
+        return services
 
+    def service_get_secrets(self, service):
+        return service.attrs['Spec']['TaskTemplate']['ContainerSpec'].get('Secrets', [])
+
+    def service_update_secrets(self, service, secrets):
+        spec = service.attrs['Spec']
+        container_spec = spec['TaskTemplate']['ContainerSpec']
+        container_spec['Secrets'] = secrets
+
+        cmd = """curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/1.25/services/{service_id}/update?version={version} -d '{data}'""".format(
+            data=json.dumps(spec), socket=self.docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
+        logger.debug('EXEC {}'.format(cmd))
+        code = os.system(cmd)
+
+
+    def secret_create(self, secret_name, secret_data):
+
+        secret_name = self.get_secret_name(secret_name)
+
+        # create secret.
+        logger.debug('creating secret {}'.format(secret_name))
+        secret = self.docker_client.secrets.create(
+            name=secret_name,
+            data=secret_data)
+        logger.debug('secret created {}'.format(secret.id))
+
+        secret = self.docker_client.secrets.get(secret.id)
+        return secret
 
     def generate_certificates(self, domains, email):
         """
@@ -99,17 +118,11 @@ class DFPLEClient():
 
         if error and not created:
             logger.error('Error while generating certs for {}'.format(domains))
+
         elif not error and not created:
             logger.debug('nothing to do')
-            # no certs generated, search for already existing certificates
-            for domain in domains:
-                for cert_type, cert_extension in cert_types:
-                    dest_file = os.path.join(self.certbot_folder, "{}.{}".format(domain, cert_extension))
-                    if os.path.exists(dest_file):
-                        certs[domain].append(dest_file)
+            certs = self.certs(domains)
 
-                if any(['.pem' in x for x in certs[domain]]):
-                    logger.info('combined certificate found at "{}".'.format(self.certbot_folder))
         elif created:
             logger.info('certificates successfully created using certbot.')
 
@@ -143,72 +156,14 @@ class DFPLEClient():
 
         return certs, created
 
-    def new_secret_name(self, name, template='{name}-{suffix}', suffix=None):
-        """
-        generate a new secret name. To make it unique, use datetime.
-        """
-        if suffix is None:
-            suffix = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
 
-        rest = 64 - len(suffix) - 1
+    def process(self, domains, email, version='1'):
+        logger.info('Letsencrypt support enabled, processing request: domains={} email={}'.format(','.join(domains), email))
 
-        if len(name) > rest:
-            name = name[-rest:]
-
-        return template.format(
-            name=name,
-            suffix=suffix)
-
-    def get_secret_name(self, name):
-        secret_name = name[-self.size_secret:]
-        secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
-        return secret_name
-
-    def service_update_secrets(self, service, secrets):
-        spec = service.attrs['Spec']
-        container_spec = spec['TaskTemplate']['ContainerSpec']
-        container_spec['Secrets'] = secrets
-
-        cmd = """curl -X POST -H "Content-Type: application/json" --unix-socket {socket} http:/1.25/services/{service_id}/update?version={version} -d '{data}'""".format(
-            data=json.dumps(spec), socket=self.docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
-        logger.debug('EXEC {}'.format(cmd))
-        code = os.system(cmd)
-
-    def secret_create(self, secret_name, secret_data):
-
-        secret_name = self.get_secret_name(secret_name)
-
-        # create secret.
-        logger.debug('creating secret {}'.format(secret_name))
-        secret = self.docker_client.secrets.create(
-            name=secret_name,
-            data=secret_data)
-        logger.debug('secret created {}'.format(secret.id))
-
-        secret = self.docker_client.secrets.get(secret.id)
-        return secret
-
-    def service_get(self, service_name):
-        services = self.docker_client.services.list(
-            filters={'name': service_name})
-        services = [x for x in services if x.name == service_name]
-        if len(services) == 1:
-            return services[0]
-        else:
-            return None
-
-    def service_dfp(self):
-        return self.service_get(self.dfp_service_name)
-
-    def process(self,
-                version='1'):
-
-        logger.info('Letsencrypt support enabled, processing request: domains={} email={}'.format(','.join(self.domains), self.email))
-
-        self.certs, created = self.generate_certificates(self.domains, self.email)
+        certs, created = self.generate_certificates(domains, email)
 
         secrets_changed = False
-        for domain, certs in self.certs.items():
+        for domain, certs in certs.items():
 
             combined = [x for x in certs if '.pem' in x]
             if len(combined) == 0:
@@ -232,10 +187,19 @@ class DFPLEClient():
                 # docker engine is provided, manage certificates as docker secrets
 
                 # check that there is an existing secret for the combined cert
-                secret_combined_found = any([x.name.startswith('{}.pem'.format(domain)[-self.size_secret:]) for x in self.secrets])
+                # secret_combined_found = any([x.name.startswith('{}.pem'.format(domain)[-self.size_secret:]) for x in self.secrets])
+                self._secrets = self.secrets('{}.pem'.format(domain))
+                secret_combined_found = False
+                if len(self._secrets):
+                    secret = self._secrets[-1]
+                    logger.debug('combined secret for {} found : {} list: {}'.format(domain, secret, self._secrets))
+                    secret_combined_found = True
 
                 # check that an already existing secret for the combined cert is attached to dfp service.
-                secret_combined_attached = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in self.secrets_dfp])
+                # secret_combined_attached = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in self.secrets_dfp])
+                self.dfp = self.services(self.dfp_service_name)[0]
+                self.dfp_secrets = self.service_get_secrets(self.dfp)
+                secret_combined_attached = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in self.dfp_secrets])
 
                 logger.debug('cert_created={} secret_found={} secret_attached={}'.format(created, secret_combined_found, secret_combined_attached))
 
@@ -246,20 +210,18 @@ class DFPLEClient():
                     secret = self.secret_create(
                             secret_cert,
                             open(combined, 'rb').read())
-                    self.secrets.append(secret)
-                elif secret_combined_found:
-                    secret = [x for x in self.secrets if x.name.startswith('{}.pem'.format(domain)[-self.size_secret:])][-1]
+                    self._secrets.append(secret)
 
                 if created or not secret_combined_attached:
                     # attach secret
                     logger.info('attaching secret {}'.format(secret.name))
 
                     # remove secrets already attached to the dfp service that are for the same domain.
-                    self.secrets_dfp = [x for x in self.secrets_dfp if not x['SecretName'].startswith(domain)]
+                    self.dfp_secrets = [x for x in self.dfp_secrets if not x['SecretName'].startswith(domain)]
 
                     # append the secret
                     secrets_changed = True
-                    self.secrets_dfp.append({
+                    self.dfp_secrets.append({
                         'SecretID': secret.id,
                         'SecretName': secret.name,
                         'File': {
@@ -274,4 +236,4 @@ class DFPLEClient():
             # I cannot understand how to use the service.update method, use a POST request against docker socket instead
             # see https://github.com/docker/docker-py/issues/1503
             # self.dfp.update(name=self.dfp.attrs['Spec']['Name'], networks=self.dfp.attrs['Spec']['Networks'], secrets=self.secrets_dfp)
-            self.service_update_secrets(self.dfp, self.secrets_dfp)
+            self.service_update_secrets(self.dfp, self.dfp_secrets)
