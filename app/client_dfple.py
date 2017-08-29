@@ -158,6 +158,7 @@ class DFPLEClient():
         return template.format(
             name=name,
             suffix=suffix)
+
     def get_secret_name(self, name):
         secret_name = name[-self.size_secret:]
         secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))

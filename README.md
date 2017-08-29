@@ -1,5 +1,7 @@
 # docker-flow-proxy letsencrypt
 
+[![Build Status](https://travis-ci.org/n1b0r/docker-flow-proxy-letsencrypt.svg?branch=master)](https://travis-ci.org/n1b0r/docker-flow-proxy-letsencrypt)
+
 `docker-flow-proxy-letsencrypt` is a `docker-flow-proxy` companion that automatically create and renew certificates for your swarm services.
 
 You need to set deployment labels to enable let's encrypt support for each proxied services:
