@@ -20,14 +20,14 @@ CERTBOT_OUTPUT = {
 		Saving debug log to /var/log/letsencrypt/letsencrypt.log
 		Obtaining a new certificate
 		Performing the following challenges:
-		http-01 challenge for sfsdfsfsffsd.ks2.nibor.me
+		http-01 challenge for site.domain.com
 		Using the webroot path /opt/www for all unmatched domains.
 		Waiting for verification...
 		Cleaning up challenges
 
 		IMPORTANT NOTES:
 		 - Congratulations! Your certificate and chain have been saved at
-		   /etc/letsencrypt/live/sfsdfsfsffsd.ks2.nibor.me/fullchain.pem. Your
+		   /etc/letsencrypt/live/site.domain.com/fullchain.pem. Your
 		   cert will expire on 2017-11-25. To obtain a new or tweaked version
 		   of this certificate in the future, simply run certbot again. To
 		   non-interactively renew *all* of your certificates, run "certbot
@@ -59,123 +59,6 @@ class DFPLEClientTestCase(TestCase):
 
 		return output, error, code
 
-	# def test_generate_cert(self):
-	# 	"""
-	# 	"""
-	# 	domains = ['site.domain.com']
-	# 	with patch.object(self.client.certbot, 'run', lambda cmd: self.letsencrypt_mock(domains, CERTBOT_OUTPUT['ok'], '', 0)), \
-	# 		patch.object(self.client.dfp_client, 'put', lambda url, data=None, headers=None: None):
-
-	# 		self.client.process(domains=domains, email='email@domain.com')
-
-	# 		# check combined file exists
-	# 		self.assertTrue(os.path.exists(os.path.join(self.certbot_path, 'live', domains[0], 'combined.pem')))
-
-	# def test_rate_limits(self):
-	# 	"""
-	# 	"""
-	# 	domains = ['site.domain.com']
-	# 	with patch.object(self.client.certbot, 'run', lambda cmd: self.letsencrypt_mock(domains, '', '', 1)):
-	# 		self.assertFalse(self.client.process(domains=domains, email='email@domain.com'))
-
-
-	# def test_secret_fresh_install(self):
-	# 	"""
-	# 	"""
-	# 	domains = ['site.domain.com']
-	# 	self.client = DFPLEClient(
-	# 		certbot_path=self.certbot_path,
-	# 		docker_client=docker.DockerClient(version='1.25'),
-	# 		dfp_service_name='proxy')
-
-	# 	# service DFP is present with no secrets
-	# 	mocked_docker_services_list = [
-	# 		docker.models.services.Service(
-	# 			attrs={
-	# 				'Spec': {
-	# 					'Name': 'proxy',
-	# 					'TaskTemplate': {'ContainerSpec': {'Image': ''}},
-	# 					'Networks': [],
-	# 				}
-	# 			})
-	# 	]
-	# 	mocked_docker_secrets_list = [
-	# 		docker.models.secrets.Secret(attrs={'Spec': {'Name': 'proxy', 'TaskTemplate': {'ContainerSpec': {}}}})
-	# 	]
-	# 	mocked_docker_secrets_create = docker.models.secrets.Secret(attrs={'Spec': {'Name': 'toto'}})
-	# 	mocked_docker_secrets_get = docker.models.secrets.Secret(attrs={})
-
-	# 	with patch.object(self.client.certbot, 'run', lambda cmd: self.letsencrypt_mock(domains, CERTBOT_OUTPUT['ok'], '', 0)), \
-	# 		patch('client_dfple.DFPLEClient.secret_combined_found', return_value=False), \
-	# 		patch('client_dfple.DFPLEClient.secret_create', return_value=mocked_docker_secrets_create), \
-	# 		patch('docker.models.services.ServiceCollection.list', return_value=mocked_docker_services_list), \
-	# 		patch('docker.models.services.Service.update', return_value=None), \
-	# 		patch('docker.models.secrets.SecretCollection.list', return_value=mocked_docker_secrets_list), \
-	# 		patch('docker.models.secrets.SecretCollection.get', return_value=mocked_docker_secrets_get):#, \
-	# 		# patch('docker.models.secrets.SecretCollection.create', return_value=mocked_docker_secrets_create):
-
-	# 		self.client.process(domains=domains, email='email@domain.com')
-
-	# 		# check combined file exists
-	# 		self.assertTrue(os.path.exists(os.path.join(self.certbot_path, 'live', domains[0], 'combined.pem')))
-
-	# def test_secret_fresh_install(self):
-	# 	"""
-	# 	"""
-	# 	domains = ['site.domain.com']
-	# 	self.client = DFPLEClient(
-	# 		certbot_path=self.certbot_path,
-	# 		docker_client=docker.DockerClient(),
-	# 		dfp_service_name='proxy')
-
-	# 	mocked_data = {
-	# 		'service_dfp': docker.models.services.Service(
-	# 			attrs={
-	# 				'Spec': {
-	# 					'Name': 'proxy',
-	# 					'TaskTemplate': {'ContainerSpec': {'Image': ''}},
-	# 					'Networks': [],
-	# 				}
-	# 			}
-	# 		),
-	# 		'secrets': {
-	# 			domains[0]: docker.models.secrets.Secret(attrs={'Spec': {'Name': ''}})
-	# 		},
-	# 		'secret_combined_found': False,
-	# 	}
-
-
-
-	# 	# mocked_docker_services_list = [
-	# 	# 	docker.models.services.Service(
-	# 	# 		attrs={
-	# 	# 			'Spec': {
-	# 	# 				'Name': 'proxy',
-	# 	# 				'TaskTemplate': {'ContainerSpec': {'Image': ''}},
-	# 	# 				'Networks': [],
-	# 	# 			}
-	# 	# 		})
-	# 	# ]
-	# 	# mocked_docker_secrets_list = [
-	# 	# 	docker.models.secrets.Secret(attrs={'Spec': {'Name': 'proxy', 'TaskTemplate': {'ContainerSpec': {}}}})
-	# 	# ]
-	# 	# mocked_docker_secrets_create = docker.models.secrets.Secret(attrs={'Spec': {'Name': 'toto'}})
-	# 	# mocked_docker_secrets_get = docker.models.secrets.Secret(attrs={})
-
-	# 	with patch.object(self.client.certbot, 'run', lambda cmd: self.letsencrypt_mock(domains, CERTBOT_OUTPUT['ok'], '', 0)), \
-	# 		patch('client_dfple.DFPLEClient.secret_combined_found', return_value=mocked_data['secret_combined_found']), \
-	# 		patch('client_dfple.DFPLEClient.secret_create', return_value=mocked_data['secrets'][domains[0]]), \
-	# 		patch('client_dfple.DFPLEClient.service_dfp', return_value=mocked_data['service_dfp']), \
-	# 		patch('docker.models.services.Service.update', return_value=None):#, \
-	# 		# patch('docker.models.services.ServiceCollection.list', return_value=mocked_docker_services_list), \
-	# 		# patch('docker.models.secrets.SecretCollection.list', return_value=mocked_docker_secrets_list), \
-	# 		# patch('docker.models.secrets.SecretCollection.get', return_value=mocked_docker_secrets_get):#, \
-	# 		# patch('docker.models.secrets.SecretCollection.create', return_value=mocked_docker_secrets_create):
-
-	# 		self.client.process(domains=domains, email='email@domain.com')
-
-	# 		# check combined file exists
-	# 		self.assertTrue(os.path.exists(os.path.join(self.certbot_path, 'live', domains[0], 'combined.pem')))
 
 class VolumeTestCase(DFPLEClientTestCase):
 
@@ -194,7 +77,7 @@ class VolumeTestCase(DFPLEClientTestCase):
 	def test(self):
 		"""
 		initial context:
-		  * no certs, no secrets
+		  * no certs, volume empty
 		"""
 
 		# create the client
@@ -212,6 +95,29 @@ class VolumeTestCase(DFPLEClientTestCase):
 		for d in self.domains:
 			self.assertTrue(any(['{}.pem'.format(d) in x for x in self.client.certs[d]]))
 
+	def test_certbot_not_ok(self):
+		"""
+		initial context:
+		  * no certs, volume empty
+		"""
+
+		# create the client
+		self.client = DFPLEClient(**self.client_attrs)
+
+		# check certs do not exist
+		for d in self.domains:
+			self.assertFalse(any(['{}.pem'.format(d) in x for x in self.client.certs[d]]))
+
+		error_occured = False
+		with patch.object(self.client.certbot, 'run', lambda cmd: self.letsencrypt_mock(self.domains, '', '', 1)), \
+			patch.object(self.client.dfp_client, 'put', lambda url, data=None, headers=None: None):
+
+			try:
+				self.client.process()
+			except:
+				error_occured = True
+
+		self.assertTrue(error_occured)
 
 
 
@@ -257,8 +163,8 @@ class SecretsTestCase(DFPLEClientTestCase):
 
 			# check secrets not found and not attached
 			for d in self.domains:
-				self.assertNotIn(d, self.client.secrets)
-				self.assertNotIn(d, self.client.secrets_dfp)
+				self.assertFalse(any([d in x.name for x in self.client.secrets]))
+				self.assertFalse(any([d == x['SecretName'] for x in self.client.secrets_dfp]))
 
 			with patch.object(self.client.certbot, 'run', lambda cmd: self.letsencrypt_mock(self.domains, CERTBOT_OUTPUT['ok'], '', 0)):
 				self.client.process()
@@ -310,79 +216,3 @@ class SecretsTestCase(DFPLEClientTestCase):
 			for d in self.domains:
 				self.assertTrue(any([d in x.name for x in self.client.secrets]))
 				self.assertTrue(any([d == x['SecretName'] for x in self.client.secrets_dfp]))
-
-
-
-
-
-		# domains = ['site.domain.com']
-		# self.client = DFPLEClient(
-		# 	certbot_path=self.certbot_path,
-		# 	docker_client=docker.DockerClient(version='1.25'),
-		# 	dfp_service_name='proxy')
-
-		# mocked_data = {
-		# 	'service_dfp': docker.models.services.Service(
-		# 		attrs={
-		# 			'Spec': {
-		# 				'Name': 'proxy',
-		# 				'TaskTemplate': {
-		# 					'ContainerSpec': {
-		# 						'Image': '',
-		# 						'Secrets': []}},
-		# 				'Networks': [],
-		# 			}
-		# 		}
-		# 	),
-		# 	'secrets': {
-		# 		domains[0]: docker.models.secrets.Secret(attrs={'Spec': {'Name': ''}})
-		# 	},
-		# 	'secret_combined_found': False,
-		# }
-
-
-
-		# # mocked_docker_services_list = [
-		# # 	docker.models.services.Service(
-		# # 		attrs={
-		# # 			'Spec': {
-		# # 				'Name': 'proxy',
-		# # 				'TaskTemplate': {'ContainerSpec': {'Image': ''}},
-		# # 				'Networks': [],
-		# # 			}
-		# # 		})
-		# # ]
-		# # mocked_docker_secrets_list = [
-		# # 	docker.models.secrets.Secret(attrs={'Spec': {'Name': 'proxy', 'TaskTemplate': {'ContainerSpec': {}}}})
-		# # ]
-		# # mocked_docker_secrets_create = docker.models.secrets.Secret(attrs={'Spec': {'Name': 'toto'}})
-		# # mocked_docker_secrets_get = docker.models.secrets.Secret(attrs={})
-
-		# with patch.object(self.client.certbot, 'run', lambda cmd: self.letsencrypt_mock(domains, CERTBOT_OUTPUT['null'], '', 0, tmp_files=['privkey.pem', 'fullchain.pem', 'combined.pem'])), \
-		# 	patch('client_dfple.DFPLEClient.check_secret_combined_found', return_value=mocked_data['secret_combined_found']), \
-		# 	patch('client_dfple.DFPLEClient.secret_create', return_value=mocked_data['secrets'][domains[0]]), \
-		# 	patch('client_dfple.DFPLEClient.service_dfp', return_value=mocked_data['service_dfp']), \
-		# 	patch('docker.models.services.Service.update', return_value=None):#, \
-		# 	# patch('docker.models.services.ServiceCollection.list', return_value=mocked_docker_services_list), \
-		# 	# patch('docker.models.secrets.SecretCollection.list', return_value=mocked_docker_secrets_list), \
-		# 	# patch('docker.models.secrets.SecretCollection.get', return_value=mocked_docker_secrets_get):#, \
-		# 	# patch('docker.models.secrets.SecretCollection.create', return_value=mocked_docker_secrets_create):
-
-
-
-
-
-		# 	self.client.process(domains=domains, email='email@domain.com')
-
-		# 	# # check combined file exists
-		# 	# self.assertTrue(os.path.exists(os.path.join(self.certbot_path, 'live', domains[0], 'combined.pem')))
-
-		# 	# check that the combined exists and it has not been created
-		# 	self.assertTrue(self.client.cert_combined_exists)
-		# 	self.assertFalse(self.client.cert_combined_created)
-
-		# 	# check that the secret was not found
-		# 	self.assertFalse(self.client.secret_combined_found)
-
-		# 	# check that the secret was not attached
-		# 	self.assertFalse(self.client.secret_combined_attached)
