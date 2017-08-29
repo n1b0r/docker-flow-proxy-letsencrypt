@@ -60,7 +60,7 @@ class DFPLEClient():
             domains = []
         for domain in domains:
             attrs['filters'] = {"name": self.get_secret_name_short('{}.pem'.format(domain))}
-            secret.append(self.docker_client.secrets.list(**attrs))
+            secrets.append(self.docker_client.secrets.list(**attrs))
         return secrets
 
     def services(self, name, exact_match=True):
