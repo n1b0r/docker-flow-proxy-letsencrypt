@@ -53,14 +53,12 @@ class DFPLEClient():
                     certs[domain].append(dest_file)
         return certs
 
-    def secrets(self, domains=None):
+    def secrets(self, domain=None):
         secrets = []
         attrs = {}
-        if domains is None:
-            domains = []
-        for domain in domains:
+        if domain is not None:
             attrs['filters'] = {"name": self.get_secret_name_short('{}.pem'.format(domain))}
-            secrets.append(self.docker_client.secrets.list(**attrs))
+        secrets.append(self.docker_client.secrets.list(**attrs))
         return secrets
 
     def services(self, name, exact_match=True):

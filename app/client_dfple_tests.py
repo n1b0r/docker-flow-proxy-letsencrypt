@@ -236,7 +236,7 @@ class SecretsTestCase(DFPLEClientTestCase):
 
 			# check secrets found and attached
 			for d in self.domains:
-				self.assertTrue(any([d in x.name for x in self.client._secrets]))
+				self.assertTrue(any([d in x.name for x in self.client._secrets]), '{} not found in {}'.format(d, [x.name for x in self.client._secrets]))
 				self.assertTrue(any([d == x['SecretName'] for x in self.client.dfp_secrets]))
 
 
