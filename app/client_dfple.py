@@ -73,6 +73,15 @@ class DFPLEClient():
     def service_get_secrets(self, service):
         return service.attrs['Spec']['TaskTemplate']['ContainerSpec'].get('Secrets', [])
 
+    def get_secret_name_short(self, name):
+        secret_name = name[-self.size_secret:]
+        return secret_name
+
+    def get_secret_name(self, name):
+        secret_name = self.get_secret_name_short(name)
+        secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+        return secret_name
+
     def service_update_secrets(self, service, secrets):
         spec = service.attrs['Spec']
         container_spec = spec['TaskTemplate']['ContainerSpec']
