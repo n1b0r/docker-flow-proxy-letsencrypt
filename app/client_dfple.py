@@ -58,8 +58,7 @@ class DFPLEClient():
         attrs = {}
         if domain is not None:
             attrs['filters'] = {"name": self.get_secret_name_short('{}.pem'.format(domain))}
-        secrets.append(self.docker_client.secrets.list(**attrs))
-        return secrets
+        return self.docker_client.secrets.list(**attrs)
 
     def services(self, name, exact_match=True):
         services = self.docker_client.services.list(
@@ -89,7 +88,6 @@ class DFPLEClient():
             data=json.dumps(spec), socket=self.docker_socket_path, service_id=service.id, version=service.attrs['Version']['Index'])
         logger.debug('EXEC {}'.format(cmd))
         code = os.system(cmd)
-
 
     def secret_create(self, secret_name, secret_data):
 
@@ -163,13 +161,16 @@ class DFPLEClient():
 
         return certs, created
 
-
     def process(self, domains, email, version='1'):
         logger.info('Letsencrypt support enabled, processing request: domains={} email={}'.format(','.join(domains), email))
 
         certs, created = self.generate_certificates(domains, email)
 
         secrets_changed = False
+        if self.docker_client != None:
+            self.dfp = self.services(self.dfp_service_name)[0]
+            self.dfp_secrets = self.service_get_secrets(self.dfp)
+
         for domain, certs in certs.items():
 
             combined = [x for x in certs if '.pem' in x]
@@ -204,8 +205,6 @@ class DFPLEClient():
 
                 # check that an already existing secret for the combined cert is attached to dfp service.
                 # secret_combined_attached = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in self.secrets_dfp])
-                self.dfp = self.services(self.dfp_service_name)[0]
-                self.dfp_secrets = self.service_get_secrets(self.dfp)
                 secret_combined_attached = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in self.dfp_secrets])
 
                 logger.debug('cert_created={} secret_found={} secret_attached={}'.format(created, secret_combined_found, secret_combined_attached))
