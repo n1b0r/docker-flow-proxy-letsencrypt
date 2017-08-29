@@ -31,15 +31,6 @@ class DFPLEClient():
 
         self.dfp_client = DockerFlowProxyAPIClient()
 
-        self.secrets_initial = []
-        self.service_dfp_secrets = []
-        self.certs = []
-        self.cert_combined_exists = None
-        created = None
-        self.secret_combined_found = None
-        self.secret_combined_attached = None
-
-
         self.domains = kwargs.get('domains', [])
         self.email = kwargs.get('email')
         self.certs = {}
@@ -71,7 +62,6 @@ class DFPLEClient():
             for cert_type, cert_extension in cert_types:
                 dest_file = os.path.join(self.certbot_folder, "{}.{}".format(domain, cert_extension))
                 if os.path.exists(dest_file):
-                    # logger.debug('  found {}'.format(dest_file))
                     self.certs[domain].append(dest_file)
 
         logger.debug('< certs={}'.format(self.certs))
@@ -120,7 +110,6 @@ class DFPLEClient():
 
                 if any(['.pem' in x for x in certs[domain]]):
                     logger.info('combined certificate found at "{}".'.format(self.certbot_folder))
-                    self.cert_combined_exists = True
         elif created:
             logger.info('certificates successfully created using certbot.')
 
@@ -170,15 +159,6 @@ class DFPLEClient():
             name=name,
             suffix=suffix)
 
-    def service_new_secrets(self, secrets, service=None, service_secrets=None):
-        if service:
-            service_secrets = service.attrs['Spec']['TaskTemplate']['ContainerSpec'].get('Secrets', [])
-        # keep other secrets
-        _secrets = [ x for x in service_secrets if not any([x['File']['Name'] == a['File']['Name'] for a in secrets])]
-        for x in secrets:
-            _secrets.append(x)
-        return _secrets
-
     def get_secret_name(self, name):
         secret_name = name[-self.size_secret:]
         secret_name += '-{}'.format(datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
@@ -217,9 +197,6 @@ class DFPLEClient():
         else:
             return None
 
-    def check_secret_combined_found(self, name):
-        return len(self.docker_client.secrets.list(filters={'name': name})) > 0
-
     def service_dfp(self):
         return self.service_get(self.dfp_service_name)
 
@@ -236,6 +213,7 @@ class DFPLEClient():
             combined = [x for x in certs if '.pem' in x]
             if len(combined) == 0:
                 logger.error('Combined certificate not found. Check logs for errors.')
+                # raise Exception to make a 500 response to dpf, and make it retry the request later.
                 raise Exception('Combined cert not found')
             combined = combined[0]
 
@@ -254,16 +232,14 @@ class DFPLEClient():
                 # docker engine is provided, manage certificates as docker secrets
 
                 # check that there is an existing secret for the combined cert
-                # secrets = self.secrets_get()
-                self.secret_combined_found = False #self.check_secret_combined_found('cert-{}.pem'.format(domain))
-                # combined_found = any([x.name == 'cert-{}.pem'.format(domain) for x in self.secrets_get()])
+                secret_combined_found = any([domain in x.name for x in self.secrets])
 
                 # check that an already existing secret for the combined cert is attached to dfp service.
-                # TODO: what if the domain name is really long ?
-                self.secret_combined_attached = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in self.secrets_dfp])
-                logger.debug('cert_created={} cert_exists={} secret_found={} secret_attached={}'.format(created, self.cert_combined_exists, self.secret_combined_found, self.secret_combined_attached))
+                secret_combined_attached = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in self.secrets_dfp])
 
-                if created or not self.secret_combined_found:
+                logger.debug('cert_created={} secret_found={} secret_attached={}'.format(created, secret_combined_found, secret_combined_attached))
+
+                if created or not secret_combined_found:
                     # create secret
                     secret_cert = '{}.pem'.format(domain)
                     logger.info('creating secret for cert {}'.format(secret_cert))
@@ -271,13 +247,13 @@ class DFPLEClient():
                             secret_cert,
                             open(combined, 'rb').read())
                     self.secrets.append(secret)
-                # else:
-                #     secret = secrets[0]
+                elif secret_combined_found:
+                    secret = any([domain in x.name for x in self.secrets])[0]
 
-                if created or not self.secret_combined_attached:
+                if created or not secret_combined_attached:
                     # attach secret
-                    # secret = self.docker_client.secrets.list(filters={'name': '{}.pem'.format(domain)})[-1]
                     logger.info('attaching secret {}'.format(secret.name))
+
                     # remove secrets already attached to the dfp service that are for the same domain.
                     self.secrets_dfp = [x for x in self.secrets_dfp if not x['SecretName'].startswith(domain)]
 
@@ -295,5 +271,7 @@ class DFPLEClient():
 
         if secrets_changed:
             logger.debug('secrets changed, updating dfp service...')
+            # I cannot understand how to use the service.update method, use a POST request against docker socket instead
+            # see https://github.com/docker/docker-py/issues/1503
             # self.dfp.update(name=self.dfp.attrs['Spec']['Name'], networks=self.dfp.attrs['Spec']['Networks'], secrets=self.secrets_dfp)
             self.service_update_secrets(self.dfp, self.secrets_dfp)

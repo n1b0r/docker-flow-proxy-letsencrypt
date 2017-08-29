@@ -31,8 +31,6 @@ if docker_socket_path and os.path.exists(docker_socket_path):
         base_url='unix:/{}'.format(docker_socket_path),
         version='1.25')
 
-# dfple_client = DFPLE(docker_client, docker_socket_path, CERTBOT_WEBROOT_PATH, CERTBOT_OPTIONS, CERTBOT_FOLDER)
-
 app = Flask(__name__)
 
 @app.route("/.well-known/acme-challenge/<path>")
