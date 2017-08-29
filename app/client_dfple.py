@@ -232,7 +232,7 @@ class DFPLEClient():
                 # docker engine is provided, manage certificates as docker secrets
 
                 # check that there is an existing secret for the combined cert
-                secret_combined_found = any([domain in x.name for x in self.secrets])
+                secret_combined_found = any([x.name.startswith('{}.pem'.format(domain)[-self.size_secret:]) for x in self.secrets])
 
                 # check that an already existing secret for the combined cert is attached to dfp service.
                 secret_combined_attached = any([x['File']['Name'] == 'cert-{}'.format(domain) for x in self.secrets_dfp])
@@ -248,7 +248,7 @@ class DFPLEClient():
                             open(combined, 'rb').read())
                     self.secrets.append(secret)
                 elif secret_combined_found:
-                    secret = any([domain in x.name for x in self.secrets])[0]
+                    secret = [x for x in self.secrets if x.name.startswith('{}.pem'.format(domain)[-self.size_secret:])][-1]
 
                 if created or not secret_combined_attached:
                     # attach secret
