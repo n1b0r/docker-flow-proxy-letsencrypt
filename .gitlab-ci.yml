@@ -4,7 +4,6 @@ services:
 
 stages:
   - test
-  - release_gitlab
   - release
 
 variables:
@@ -74,7 +73,7 @@ release:
     - master
 
 release_gitlab:
-  stage: release_gitlab
+  stage: release
   script:
     - docker build -t $GITLAB_IMAGE_NAME:${CI_BUILD_REF_NAME} .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN docker.nibor.me
@@ -106,3 +105,12 @@ release_tags:
   tags:
     - ks2.nibor.me
 
+docs:
+  stage: release
+  script:
+    - docker build -f Dockerfile.docs -t nib0r/docker-flow-proxy-letsencrypt-docs:${CI_BUILD_REF_NAME} .
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
+    - docker push nib0r/docker-flow-proxy-letsencrypt-docs:${CI_BUILD_REF_NAME}
+  tags:
+    - shell
+    - ks2.nibor.me
