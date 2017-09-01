@@ -88,7 +88,7 @@ class DFPLETestCase(TestCase):
             print('Error while getting config on {}: {}'.format(self.base_domain, e))
             return False
 
-    def wait_until_found_in_config(self, texts, timeout=45):
+    def wait_until_found_in_config(self, texts, timeout=300):
         # print('WAITING FOR', text)
 
         _start = time.time()
@@ -215,6 +215,42 @@ class DFPLEOriginal(DFPLETestCase, Scenario):
 
         self.assertTrue(proxy_le_present_in_config,
             "docker-flow-proxy-letsencrypt service not registered.")
+
+
+class DFPLEChallengeDNS(DFPLETestCase, Scenario):
+
+
+    def setUp(self):
+
+        super(DFPLEChallengeDNS, self).setUp()
+
+        # docker-flow-proxy-letsencrypt service
+        dfple_image = self.docker_client.images.build(
+            path=os.path.dirname(os.path.abspath(__file__)),
+            tag='robin/docker-flow-proxy-letsencrypt:{}'.format(self.test_name),
+            quiet=False)
+        dfple_service = {
+            'name': self.proxy_le_service_name,
+            'image': 'robin/docker-flow-proxy-letsencrypt:{}'.format(self.test_name),
+            'constraints': ["node.role == manager"],
+            'env': [
+                "DF_PROXY_SERVICE_NAME=proxy_{}".format(self.test_name),
+                "DF_SWARM_LISTENER_SERVICE_NAME=swarm_listener_{}".format(self.test_name),
+                "CERTBOT_OPTIONS=--staging",
+                "LOG=debug",
+                "CERTBOT_CHALLENGE=dns",
+                "CERTBOT_MANUAL_AUTH_HOOK=/app/hooks/ovh/manual-auth-hook.sh",
+                "CERTBOT_MANUAL_CLEANUP_HOOK=/app/hooks/ovh/manual-cleanup-hook.sh",
+                "OVH_DNS_ZONE=nibor.me",
+                "OVH_APPLICATION_KEY={}".format(os.environ.get('OVH_APPLICATION_KEY')),
+                "OVH_APPLICATION_SECRET={}".format(os.environ.get('OVH_APPLICATION_SECRET')),
+                "OVH_CONSUMER_KEY={}".format(os.environ.get('OVH_CONSUMER_KEY')),
+            ],
+            'networks': [self.network_name]
+        }
+
+        self.dfple_service = self.docker_client.services.create(**dfple_service)
+        self.services.append(self.dfple_service)
 
 
 class DFPLESecret(DFPLETestCase, Scenario):
