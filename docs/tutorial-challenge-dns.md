@@ -12,7 +12,7 @@ docker service create --name proxy_proxy-le \
 	-e CERTBOT_CHALLENGE=dns \
     -e CERTBOT_MANUAL_AUTH_HOOK=/app/hooks/ovh/manual-auth-hook.sh \
     -e CERTBOT_MANUAL_CLEANUP_HOOK=/app/hooks/ovh/manual-cleanup-hook.sh \
-    -e OVH_DNS_ZONE=nibor.me \
+    -e OVH_DNS_ZONE=XXXXXX \
     -e OVH_APPLICATION_KEY=XXXXXX \
     -e OVH_APPLICATION_SECRET=XXXXXX \
     -e OVH_CONSUMER_KEY=XXXXXX \
