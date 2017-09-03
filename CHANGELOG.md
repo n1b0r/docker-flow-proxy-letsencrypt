@@ -1,5 +1,10 @@
 # docker-flow-proxy-letsencrypt
 
+## 0.6
+* write [documentation portal](https://docs.dfple.nibor.me)
+* CERTBOT_CHALLENGE env var now accepts `http` or `dns`
+* OVH certbot manual hooks
+
 ## 0.5
 * rework code to have unit tests allowing to reproduce error [#9](https://github.com/n1b0r/docker-flow-proxy-letsencrypt/issues/9)
 * CERTBOT_CHALLENGE env var - [#11](https://github.com/n1b0r/docker-flow-proxy-letsencrypt/issues/11)
