@@ -106,7 +106,7 @@ release_tags:
   tags:
     - ks2.nibor.me
 
-docs:
+release_docs:
   stage: release
   script:
     - docker build -f Dockerfile.docs -t nib0r/docker-flow-proxy-letsencrypt-docs:${CI_BUILD_REF_NAME} .
@@ -132,7 +132,7 @@ docs_tags:
     - tags
 
 docs:
-  stage: release
+  stage: deploy
   script:
     - docker service rm docker-flow-proxy-letsencrypt-docs || true
     - docker service create --name docker-flow-proxy-letsencrypt-docs --network proxy --label com.df.notify=true --label com.df.distribute=true --label com.df.serviceDomain=docs.dfple.nibor.me --label com.df.servicePath=/ --label com.df.srcPort=443 --label com.df.port=80 --label com.df.letsencrypt.host=docs.dfple.nibor.me --label com.df.letsencrypt.email=robinlucbernet@gmail.com nib0r/docker-flow-proxy-letsencrypt-docs:master
