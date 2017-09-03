@@ -1,7 +1,9 @@
 site_name: docker-flow-proxy-letsencrypt
 pages:
   - Home: index.md
-  - Tutorial: tutorial-volumes.md
+  - Tutorials:
+    - Using volumes: tutorial-volumes.md
+    - Using DNS challenge: tutorial-challenge-dns.md
   - Configuration: config.md
   - Examples:
     - Using volumes: example-volumes.md
