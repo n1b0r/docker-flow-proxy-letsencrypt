@@ -33,13 +33,13 @@ Its work consists in :
 
 ## Get started
 
-Check the [tutorial](docs/tutorial-volumes.md) to get started with `docker-flow-proxy-letsencrypt` environment.
+Check the [tutorial](tutorial-volumes.md) to get started with `docker-flow-proxy-letsencrypt` environment.
 
 Please note that in order to keep persistent certificates :
 
   * on DFPLE side : you will need to use a volume on `/etc/letsencrypt`,
-  * on DFP side : you will have to either use a volume (see example [using volumes](docs/example-volumes.md)) or store certificates as secrets (see example [using secrets](docs/example-secrets.md))
+  * on DFP side : you will have to either use a volume (see example [using volumes](example-volumes.md)) or store certificates as secrets (see example [using secrets](example-secrets.md))
 
 You can use both `dns` and `http` letsencrypt ACME challenges (see [configuration](config.md)).
 
-Automatic renewal is performed at fixed interval. By default renewal process is performed once per day at 2.30 am. You can specify your own interval using `LETSENCRYPT_RENEWAL_CRON` env var on DFLE (see [configuration](docs/config.md)).
+Automatic renewal is performed at fixed interval. By default renewal process is performed once per day at 2.30 am. You can specify your own interval using `LETSENCRYPT_RENEWAL_CRON` env var on DFLE (see [configuration](config.md)).

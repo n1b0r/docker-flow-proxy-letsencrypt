@@ -69,6 +69,8 @@ class VolumeTestCase(DFPLEClientTestCase):
 		self.email = 'email@domail.com'
 		self.client_attrs = {
 			'certbot_path': self.certbot_path,
+			'certbot_challenge': 'http',
+			'certbot_webroot_path': '/tmp',
 			'domains': self.domains,
 			'email': self.email,
 		}
@@ -133,6 +135,8 @@ class SecretsTestCase(DFPLEClientTestCase):
 		self.email = 'email@domail.com'
 		self.client_attrs = {
 			'certbot_path': self.certbot_path,
+			'certbot_challenge': 'http',
+			'certbot_webroot_path': '/tmp',
 			'domains': self.domains,
 			'email': self.email,
 			'docker_client': docker.DockerClient(),

@@ -4,8 +4,8 @@ services:
 
 stages:
   - test
-  - release_gitlab
   - release
+  - deploy
 
 variables:
   IMAGE_NAME: nib0r/docker-flow-proxy-letsencrypt
@@ -74,7 +74,7 @@ release:
     - master
 
 release_gitlab:
-  stage: release_gitlab
+  stage: release
   script:
     - docker build -t $GITLAB_IMAGE_NAME:${CI_BUILD_REF_NAME} .
     - docker login -u gitlab-ci-token -p $CI_JOB_TOKEN docker.nibor.me
@@ -106,3 +106,38 @@ release_tags:
   tags:
     - ks2.nibor.me
 
+release_docs:
+  stage: release
+  script:
+    - docker build -f Dockerfile.docs -t nib0r/docker-flow-proxy-letsencrypt-docs:${CI_BUILD_REF_NAME} .
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
+    - docker push nib0r/docker-flow-proxy-letsencrypt-docs:${CI_BUILD_REF_NAME}
+  tags:
+    - shell
+    - ks2.nibor.me
+  only:
+    - develop
+    - master
+
+docs_tags:
+  stage: release
+  script:
+    - docker build -f Dockerfile.docs -t nib0r/docker-flow-proxy-letsencrypt-docs:${CI_BUILD_TAG} .
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
+    - docker push nib0r/docker-flow-proxy-letsencrypt-docs:${CI_BUILD_TAG}
+  tags:
+    - shell
+    - ks2.nibor.me
+  only:
+    - tags
+
+docs:
+  stage: deploy
+  script:
+    - docker service rm docker-flow-proxy-letsencrypt-docs || true
+    - docker service create --name docker-flow-proxy-letsencrypt-docs --network proxy --label com.df.notify=true --label com.df.distribute=true --label com.df.serviceDomain=docs.dfple.nibor.me --label com.df.servicePath=/ --label com.df.srcPort=443 --label com.df.port=80 --label com.df.letsencrypt.host=docs.dfple.nibor.me --label com.df.letsencrypt.email=robinlucbernet@gmail.com nib0r/docker-flow-proxy-letsencrypt-docs:master
+  tags:
+    - shell
+    - ks2.nibor.me
+  only:
+    - master
