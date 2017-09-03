@@ -5,10 +5,20 @@ logger = logging.getLogger('letsencrypt')
 
 
 class CertbotClient():
-    def __init__(self, challenge, webroot_path=None, options=None):
-        self.challenge = challenge
-        self.webroot_path = webroot_path
-        self.options = options
+    def __init__(self, **kwargs):
+        self.challenge = kwargs.get('challenge')
+        self.webroot_path = kwargs.get('webroot_path')
+        self.manual_auth_hook = kwargs.get('manual_auth_hook')
+        self.manual_cleanup_hook = kwargs.get('manual_cleanup_hook')
+        self.options = kwargs.get('options')
+
+        if self.challenge not in ("http", "dns"):
+            raise Exception('required argument "challenge" not set.')
+        if self.challenge == "http" and self.webroot_path is None:
+            raise Exception('required argument "webroot_path" not set. Required when using challenge "http"')
+        if self.challenge == "dns" and (self.manual_auth_hook is None or self.manual_cleanup_hook is None):
+            raise Exception('required argument "manual_auth_hook" or "manual_manual_hook" not set. Required when using challenge "dns"')
+
 
     def run(self, cmd):
         # cmd = cmd.split()
@@ -30,8 +40,10 @@ class CertbotClient():
         """
 
         c = ''
-        if self.challenge == 'webroot':
-        	c = "--webroot --webroot-path {}".format(self.webroot_path)
+        if self.challenge == 'http':
+            c = "--webroot --webroot-path {}".format(self.webroot_path)
+        if self.challenge == 'dns':
+            c = "--manual --manual-public-ip-logging-ok --preferred-challenges dns --manual-auth-hook {} --manual-cleanup-hook {}".format(self.manual_auth_hook, self.manual_cleanup_hook)
 
         output, error, code = self.run("""certbot certonly \
                     --agree-tos \
