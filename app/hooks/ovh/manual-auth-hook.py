@@ -29,4 +29,4 @@ response = client.post('/domain/zone/{}/refresh'.format(OVH_DNS_ZONE))
 print "Zone refreshed : {}".format(response)
 
 # sleep to make sure the change has time to propagate over to DNS
-time.sleep(45)
+time.sleep(60)

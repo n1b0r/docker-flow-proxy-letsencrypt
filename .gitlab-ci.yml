@@ -135,7 +135,7 @@ docs:
   stage: deploy
   script:
     - docker service rm docker-flow-proxy-letsencrypt-docs || true
-    - docker service create --name docker-flow-proxy-letsencrypt-docs --network proxy --label com.df.notify=true --label com.df.distribute=true --label com.df.serviceDomain=docs.dfple.nibor.me --label com.df.servicePath=/ --label com.df.srcPort=443 --label com.df.port=80 --label com.df.letsencrypt.host=docs.dfple.nibor.me --label com.df.letsencrypt.email=robinlucbernet@gmail.com nib0r/docker-flow-proxy-letsencrypt-docs:master
+    - docker service create --name docker-flow-proxy-letsencrypt-docs --network proxy --label com.df.notify=true --label com.df.distribute=true --label com.df.serviceDomain=dfple-docs.ks2.nibor.me --label com.df.servicePath=/ --label com.df.srcPort=443 --label com.df.port=80 --label com.df.letsencrypt.host=dfple-docs.ks2.nibor.me --label com.df.letsencrypt.email=robinlucbernet@gmail.com nib0r/docker-flow-proxy-letsencrypt-docs:master
   tags:
     - shell
     - ks2.nibor.me
