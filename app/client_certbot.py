@@ -34,9 +34,9 @@ class CertbotClient():
 
         return output, error, process.returncode
 
-    def update_cert(self, domains, email):
+    def update_cert(self, domains, email, testing=False):
         """
-        Update certifacts
+        Update certificates
         """
 
         c = ''
@@ -44,6 +44,18 @@ class CertbotClient():
             c = "--webroot --webroot-path {}".format(self.webroot_path)
         if self.challenge == 'dns':
             c = "--manual --manual-public-ip-logging-ok --preferred-challenges dns --manual-auth-hook {} --manual-cleanup-hook {}".format(self.manual_auth_hook, self.manual_cleanup_hook)
+
+        logger.info('options before: {}'.format(self.options))
+        if testing:
+            if -1 == self.options.find('--staging'):
+                self.options += ' --staging'
+        else:
+            """
+            TODO fix - this removes "staging", when set via CERT_OPTIONS !!!
+            """
+            self.options = self.options.replace('--staging', '')
+
+        logger.info('options after: {}'.format(self.options))
 
         output, error, code = self.run("""certbot certonly \
                     --agree-tos \

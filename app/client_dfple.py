@@ -106,10 +106,11 @@ class DFPLEClient():
         secret = self.docker_client.secrets.get(secret.id)
         return secret
 
-    def generate_certificates(self, domains, email):
+    def generate_certificates(self, domains, email, testing=False):
         """
             Generate or renew certificates for given domains
 
+            :param testing: Issue testing / staging certificate
             :param domains: Domain names to generate certificates. Comma separated.
             :param email: Email used during letsencrypt process
             :type a: string
@@ -121,8 +122,8 @@ class DFPLEClient():
         for domain in domains:
             certs[domain] = []
 
-        logger.debug('Generating certificates domains:{} email:{}'.format(domains, email))
-        error, created = self.certbot.update_cert(domains, email)
+        logger.debug('Generating certificates domains:{} email:{} testing:{}'.format(domains, email, testing))
+        error, created = self.certbot.update_cert(domains, email, testing)
 
         if error and not created:
             logger.error('Error while generating certs for {}'.format(domains))
@@ -164,10 +165,10 @@ class DFPLEClient():
 
         return certs, created
 
-    def process(self, domains, email, version='1'):
-        logger.info('Letsencrypt support enabled, processing request: domains={} email={}'.format(','.join(domains), email))
+    def process(self, domains, email, version='1', testing=False):
+        logger.info('Letsencrypt support enabled, processing request: domains={} email={} testing={}'.format(','.join(domains), email, testing))
 
-        certs, created = self.generate_certificates(domains, email)
+        certs, created = self.generate_certificates(domains, email, testing)
 
         secrets_changed = False
         if self.docker_client != None:
