@@ -72,7 +72,7 @@ def reconfigure(version):
         if all([label in args.keys() for label in required_labels]):
             logger.info('letsencrypt support enabled.')
 
-            testing = False
+            testing = None
             if 'letsencrypt.testing' in args:
                 testing = args['letsencrypt.testing']
                 if isinstance(testing, basestring):

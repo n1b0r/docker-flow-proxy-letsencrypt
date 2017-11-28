@@ -106,7 +106,7 @@ class DFPLEClient():
         secret = self.docker_client.secrets.get(secret.id)
         return secret
 
-    def generate_certificates(self, domains, email, testing=False):
+    def generate_certificates(self, domains, email, testing=None):
         """
             Generate or renew certificates for given domains
 
@@ -165,7 +165,7 @@ class DFPLEClient():
 
         return certs, created
 
-    def process(self, domains, email, version='1', testing=False):
+    def process(self, domains, email, version='1', testing=None):
         logger.info('Letsencrypt support enabled, processing request: domains={} email={} testing={}'.format(','.join(domains), email, testing))
 
         certs, created = self.generate_certificates(domains, email, testing)

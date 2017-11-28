@@ -34,7 +34,7 @@ class CertbotClient():
 
         return output, error, process.returncode
 
-    def update_cert(self, domains, email, testing=False):
+    def update_cert(self, domains, email, testing=None):
         """
         Update certificates
         """
@@ -49,10 +49,8 @@ class CertbotClient():
         if testing:
             if -1 == self.options.find('--staging'):
                 self.options += ' --staging'
-        else:
-            """
-            TODO fix - this removes "staging", when set via CERT_OPTIONS !!!
-            """
+        elif False == testing:
+            # is true, and not None
             self.options = self.options.replace('--staging', '')
 
         logger.info('options after: {}'.format(self.options))
