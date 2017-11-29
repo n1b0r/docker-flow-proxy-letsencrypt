@@ -52,7 +52,7 @@ class CertbotClient():
         elif False == testing:
             # is not testing, remove staging flag
             self.options = self.options.replace('--staging', '')
-        # else don't do anything, because label was not set - use glboal settings
+        # else don't do anything, because label was not set - use global settings
 
 
         output, error, code = self.run("""certbot certonly \
