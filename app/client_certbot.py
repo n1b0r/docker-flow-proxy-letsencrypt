@@ -45,15 +45,15 @@ class CertbotClient():
         if self.challenge == 'dns':
             c = "--manual --manual-public-ip-logging-ok --preferred-challenges dns --manual-auth-hook {} --manual-cleanup-hook {}".format(self.manual_auth_hook, self.manual_cleanup_hook)
 
-        logger.info('options before: {}'.format(self.options))
+        # is testing, add staging flag
         if testing:
             if -1 == self.options.find('--staging'):
                 self.options += ' --staging'
         elif False == testing:
-            # is true, and not None
+            # is not testing, remove staging flag
             self.options = self.options.replace('--staging', '')
+        # else don't do anything, because label was not set - use glboal settings
 
-        logger.info('options after: {}'.format(self.options))
 
         output, error, code = self.run("""certbot certonly \
                     --agree-tos \
