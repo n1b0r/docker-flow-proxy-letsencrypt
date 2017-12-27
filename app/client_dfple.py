@@ -26,7 +26,7 @@ class DFPLEClient():
         self.certbot = CertbotClient(
             challenge=kwargs.get('certbot_challenge'),
             webroot_path=kwargs.get('certbot_webroot_path'),
-            options=kwargs.get('certbot_options'),
+            options=kwargs.get('certbot_options', ''),
             manual_auth_hook=kwargs.get('certbot_manual_auth_hook'),
             manual_cleanup_hook=kwargs.get('certbot_manual_cleanup_hook')
             )

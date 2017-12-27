@@ -10,7 +10,7 @@ class CertbotClient():
         self.webroot_path = kwargs.get('webroot_path')
         self.manual_auth_hook = kwargs.get('manual_auth_hook')
         self.manual_cleanup_hook = kwargs.get('manual_cleanup_hook')
-        self.options = kwargs.get('options')
+        self.options = kwargs.get('options', "")
 
         if self.challenge not in ("http", "dns"):
             raise Exception('required argument "challenge" not set.')
@@ -34,6 +34,19 @@ class CertbotClient():
 
         return output, error, process.returncode
 
+    def get_options(self, testing=None):
+
+        opts = self.options.split()
+
+        # if testing, add staging flag
+        if testing and '--staging' not in opts:
+            opts.append('--staging')
+        # if not testing, remove staging flag
+        elif not testing and '--staging' in opts:
+            opts.remove('--staging')
+
+        return ' '.join(opts)
+
     def update_cert(self, domains, email, testing=None):
         """
         Update certificates
@@ -44,16 +57,6 @@ class CertbotClient():
             c = "--webroot --webroot-path {}".format(self.webroot_path)
         if self.challenge == 'dns':
             c = "--manual --manual-public-ip-logging-ok --preferred-challenges dns --manual-auth-hook {} --manual-cleanup-hook {}".format(self.manual_auth_hook, self.manual_cleanup_hook)
-
-        # is testing, add staging flag
-        if testing:
-            if -1 == self.options.find('--staging'):
-                self.options += ' --staging'
-        elif False == testing:
-            # is not testing, remove staging flag
-            self.options = self.options.replace('--staging', '')
-        # else don't do anything, because label was not set - use global settings
-
 
         output, error, code = self.run("""certbot certonly \
                     --agree-tos \
@@ -67,7 +70,7 @@ class CertbotClient():
                         domains=','.join(domains),
                         email=email,
                         webroot_path=self.webroot_path,
-                        options=self.options,
+                        options=self.get_options(testing=testing),
                         challenge=c).split())
 
         ret_error = False
