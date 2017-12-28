@@ -13,8 +13,7 @@ repo_url: https://github.com/n1b0r/docker-flow-proxy-letsencrypt
 site_author: Robin Lucbernet
 copyright: Copyright © 2017 Robin Lucbernet
 strict: true
-theme: 
-  name: 'material'
+theme: 'material'
 extra:
   palette:
     primary: 'blue'
