@@ -42,7 +42,7 @@ class CertbotClient():
         if testing and '--staging' not in opts:
             opts.append('--staging')
         # if not testing, remove staging flag
-        elif not testing and '--staging' in opts:
+        elif testing is False and '--staging' in opts:
             opts.remove('--staging')
 
         return ' '.join(opts)

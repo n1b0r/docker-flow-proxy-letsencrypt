@@ -18,3 +18,7 @@ class CertbotClientTestCase(TestCase):
 		assert '--staging' not in certbot_client.get_options(testing=False)
 		certbot_client = CertbotClient(challenge='http', webroot_path='/tmp', options="--staging")
 		assert '--staging' not in certbot_client.get_options(testing=False)
+		certbot_client = CertbotClient(challenge='http', webroot_path='/tmp', options="--staging")
+		assert '--staging' in certbot_client.get_options(testing=None)
+		certbot_client = CertbotClient(challenge='http', webroot_path='/tmp')
+		assert '--staging' not in certbot_client.get_options(testing=None)
