@@ -7,3 +7,4 @@ before_install:
 script:
 - pip install -r requirements-test.txt
 - pytest app/client_dfple_tests.py
+- pytest app/client_certbot_tests.py

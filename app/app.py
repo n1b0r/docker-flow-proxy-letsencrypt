@@ -72,7 +72,13 @@ def reconfigure(version):
         if all([label in args.keys() for label in required_labels]):
             logger.info('letsencrypt support enabled.')
 
-            client.process(args['letsencrypt.host'].split(','), args['letsencrypt.email'])
+            testing = None
+            if 'letsencrypt.testing' in args:
+                testing = args['letsencrypt.testing']
+                if isinstance(testing, basestring):
+                    testing = True if testing.lower() == 'true' else False
+
+            client.process(args['letsencrypt.host'].split(','), args['letsencrypt.email'], testing=testing)
 
     # proxy requests to docker-flow-proxy
     # sometimes we can get an error back from DFP, this can happen when DFP is not fully loaded.

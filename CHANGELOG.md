@@ -1,5 +1,8 @@
 # docker-flow-proxy-letsencrypt
 
+## 0.7
+* staging per service [#13](https://github.com/n1b0r/docker-flow-proxy-letsencrypt/pull/13)
+
 ## 0.6
 * write [documentation portal](https://docs.dfple.nibor.me)
 * CERTBOT_CHALLENGE env var now accepts `http` or `dns`

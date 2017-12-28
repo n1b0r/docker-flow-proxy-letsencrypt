@@ -51,6 +51,7 @@ test:
   script:
     - pip install -r requirements-test.txt --upgrade
     - pytest app/client_dfple_tests.py
+    - pytest app/client_certbot_tests.py
   tags:
     - shell
     - ks2.nibor.me
@@ -117,6 +118,19 @@ release_docs:
     - ks2.nibor.me
   only:
     - develop
+
+
+release_docs_master:
+  stage: release
+  script:
+    - docker build -f Dockerfile.docs -t nib0r/docker-flow-proxy-letsencrypt-docs:${CI_BUILD_REF_NAME} .
+    - docker login -u $DOCKER_HUB_USER -p $DOCKER_HUB_PASSWORD
+    - docker push nib0r/docker-flow-proxy-letsencrypt-docs:${CI_BUILD_REF_NAME}
+    - curl -X POST "https://jenkins.dockerflow.com/job/n1b0r/job/docker-flow-proxy-letsencrypt/buildWithParameters?token=n1b0r&tag=${CI_BUILD_REF_NAME}"
+  tags:
+    - shell
+    - ks2.nibor.me
+  only:
     - master
 
 docs_tags:
