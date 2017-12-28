@@ -51,6 +51,7 @@ test:
   script:
     - pip install -r requirements-test.txt --upgrade
     - pytest app/client_dfple_tests.py
+    - pytest app/client_certbot_tests.py
   tags:
     - shell
     - ks2.nibor.me
