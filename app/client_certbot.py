@@ -10,7 +10,7 @@ class CertbotClient():
         self.webroot_path = kwargs.get('webroot_path')
         self.manual_auth_hook = kwargs.get('manual_auth_hook')
         self.manual_cleanup_hook = kwargs.get('manual_cleanup_hook')
-        self.options = kwargs.get('options')
+        self.options = kwargs.get('options', "")
 
         if self.challenge not in ("http", "dns"):
             raise Exception('required argument "challenge" not set.')
@@ -34,9 +34,22 @@ class CertbotClient():
 
         return output, error, process.returncode
 
-    def update_cert(self, domains, email):
+    def get_options(self, testing=None):
+
+        opts = self.options.split()
+
+        # if testing, add staging flag
+        if testing and '--staging' not in opts:
+            opts.append('--staging')
+        # if not testing, remove staging flag
+        elif testing is False and '--staging' in opts:
+            opts.remove('--staging')
+
+        return ' '.join(opts)
+
+    def update_cert(self, domains, email, testing=None):
         """
-        Update certifacts
+        Update certificates
         """
 
         c = ''
@@ -57,7 +70,7 @@ class CertbotClient():
                         domains=','.join(domains),
                         email=email,
                         webroot_path=self.webroot_path,
-                        options=self.options,
+                        options=self.get_options(testing=testing),
                         challenge=c).split())
 
         ret_error = False

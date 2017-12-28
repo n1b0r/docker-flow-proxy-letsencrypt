@@ -1,4 +1,13 @@
-# configuration
+# Configuration
+
+## Labels
+
+| Name                           |      Description                                                                       | Default   |
+|--------------------------------|:--------------------------------------------------------------------------------------:|----------:|
+| com.df.letsencrypt.host        | Comma separated list of domains letsencrypt will generate/update certs for.            |           |
+| com.df.letsencrypt.email       | Email used by letsencrypt when registering cert.                                       |           |
+| com.df.letsencrypt.testing     | Enable/disable staging per service. Please see [#13](https://github.com/n1b0r/docker-flow-proxy-letsencrypt/pull/13) |           |
+
 
 ## Environment variables
 
