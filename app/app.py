@@ -64,7 +64,7 @@ def reconfigure(version):
 
         logger.info('request for service: {}'.format(args.get('serviceName')))
 
-        # Check if the newly registered service is usign letsencrypt companion.
+        # Check if the newly registered service is using letsencrypt companion.
         # Labels required:
         #   * com.df.letsencrypt.host
         #   * com.df.letsencrypt.email
