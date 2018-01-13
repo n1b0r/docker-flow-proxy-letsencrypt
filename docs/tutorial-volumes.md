@@ -60,7 +60,7 @@ docker service create --name proxy_proxy \
 	-p 443:443 \
 	--network proxy \
 	-e MODE=swarm \
-	-e LISTENER_ADDRESS=swarm-listener \
+	-e LISTENER_ADDRESS=proxy_swarm-listener \
 	-e SERVICE_NAME=proxy_proxy \
 	--mount "type=volume,source=dfp-certs,destination=/certs" \
 	vfarcic/docker-flow-proxy
