@@ -47,10 +47,12 @@ client = DFPLEClient(**args)
 
 app = Flask(__name__)
 
+
 @app.route("/.well-known/acme-challenge/<path>")
 def acme_challenge(path):
     return send_from_directory(CERTBOT_WEBROOT_PATH,
         ".well-known/acme-challenge/{}".format(path))
+
 
 @app.route("/v<int:version>/docker-flow-proxy-letsencrypt/reconfigure")
 def reconfigure(version):
@@ -66,9 +68,31 @@ def reconfigure(version):
 
         # Check if the newly registered service is using letsencrypt companion.
         # Labels required:
-        #   * com.df.letsencrypt.host
         #   * com.df.letsencrypt.email
-        required_labels = ('letsencrypt.host', 'letsencrypt.email')
+
+        # explicitly make it a tuple
+        required_labels = ('letsencrypt.email', )
+
+        # v1: com.df.serviceDomain=example.com
+        # v2: com.df.serviceDomain=example.com,foo.bar
+        # v3: com.df.serviceDomain.1=example.com  com.df.serviceDomain.2=foo.bar
+        # v4.1: 2+ domains are specified in serviceDomain and only one is in letsencrypt.host ?
+        # v4.2 ... the the other way around
+        # => we don't need to solve it - it's user's problem and / or user only wants 1 url behind HTTPS, the other not
+        le_hosts = []
+        extract_hosts_from_service_domain = False
+
+        if 'letsencrypt.host' in args:
+            le_hosts = args['letsencrypt.host'].split(',')
+        else:
+            extract_hosts_from_service_domain = True
+
+        if extract_hosts_from_service_domain:
+
+            for key, value in args.iteritems():
+                if 0 == key.find('serviceDomain'):
+                    le_hosts += value.split(',')
+
         if all([label in args.keys() for label in required_labels]):
             logger.info('letsencrypt support enabled.')
 
@@ -78,7 +102,7 @@ def reconfigure(version):
                 if isinstance(testing, basestring):
                     testing = True if testing.lower() == 'true' else False
 
-            client.process(args['letsencrypt.host'].split(','), args['letsencrypt.email'], testing=testing)
+            client.process(le_hosts, args['letsencrypt.email'], testing=testing)
 
     # proxy requests to docker-flow-proxy
     # sometimes we can get an error back from DFP, this can happen when DFP is not fully loaded.
@@ -99,6 +123,7 @@ def reconfigure(version):
         time.sleep(os.environ.get('RETRY_INTERVAL', 5))
 
     return "OK"
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=8080, debug=True, threaded=True)
