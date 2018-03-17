@@ -10,6 +10,7 @@ RUN apk add --update curl
 RUN mkdir -p /opt/www
 RUN mkdir -p /etc/letsencrypt
 RUN mkdir -p /var/lib/letsencrypt
+RUN touch /var/log/crond.log
 
 COPY ./requirements.txt /requirements.txt
 RUN pip install -r /requirements.txt
