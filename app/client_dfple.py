@@ -8,8 +8,9 @@ import logging
 logger = logging.getLogger('letsencrypt')
 
 
+combined_cert_type = ('combined', 'pem')
 cert_types = [
-    ('combined', 'pem'),
+    combined_cert_type,
     ('fullchain', 'crt'),
     ('privkey', 'key')]
 
@@ -150,18 +151,18 @@ class DFPLEClient():
 
             # for each domain, create a symlink for main combined cert.
             for domain in domains:
-                for cert_type, cert_extension in cert_types:
-                    dest_file = os.path.join(self.certbot_folder, "{}.{}".format(domain, cert_extension))
+                cert_type, cert_extension = combined_cert_type
+                dest_file = os.path.join(self.certbot_folder, "{}.{}".format(domain, cert_extension))
 
-                    if os.path.exists(dest_file):
-                        os.remove(dest_file)
+                if os.path.exists(dest_file):
+                    os.remove(dest_file)
 
-                    # generate symlinks
-                    os.symlink(
-                        os.path.join('./live', base_domain, "{}.pem".format(cert_type)),
-                        dest_file)
+                # generate symlinks
+                os.symlink(
+                    os.path.join('./live', base_domain, "{}.pem".format(cert_type)),
+                    dest_file)
 
-                    certs[domain].append(dest_file)
+                certs[domain].append(dest_file)
 
         return certs, created
 
