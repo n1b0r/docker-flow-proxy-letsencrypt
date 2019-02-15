@@ -11,7 +11,7 @@ Join the #df-letsencrypt Slack channel in [DevOps20](http://slack.devops20toolki
 The mecanism is mostly inspired by the [JrCs/docker-letsencrypt-nginx-proxy-companion](https://github.com/JrCs/docker-letsencrypt-nginx-proxy-companion) designed for [jwilder/nginx-proxy](https://github.com/jwilder/nginx-proxy).
 
 
-Normally (without using DFPLE) when a new service is created in the swarm, the `docker-flow-swarm-listener` (DFSL) will send a **notify** request to the `docker-flow-proxy` (DFP) wich reload based on new config.
+Normally (without using DFPLE) when a new service is created in the swarm, the `docker-flow-swarm-listener` (DFSL) will send a **notify** request to the `docker-flow-proxy` (DFP), which reloads based on the new config.
 
 ```
 DFSL  -----notify----->  DFP
