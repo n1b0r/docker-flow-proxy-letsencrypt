@@ -1,4 +1,6 @@
 docker
 flask
 ovh
+python-digitalocean
+tldextract
 requests
