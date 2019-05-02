@@ -1,6 +1,7 @@
 docker
 flask
 ovh
+certbot-dns-digitalocean
 python-digitalocean
 tldextract
 requests

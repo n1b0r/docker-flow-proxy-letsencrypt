@@ -1,7 +1,7 @@
 # docker-flow-proxy-letsencrypt
 
 ## 0.8
-* DigitalOcean certbot manual hooks
+* DigitalOcean certbot dns plugin
 
 ## 0.7
 * staging per service [#13](https://github.com/n1b0r/docker-flow-proxy-letsencrypt/pull/13)
