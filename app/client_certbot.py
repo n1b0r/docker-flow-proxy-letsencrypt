@@ -62,8 +62,8 @@ class CertbotClient():
             c = "--manual --manual-public-ip-logging-ok --preferred-challenges dns --manual-auth-hook {} --manual-cleanup-hook {}".format(self.manual_auth_hook, self.manual_cleanup_hook)
 
         if self.challenge == 'dns_digitalocean':
-            c = "--dns-digitalocean --dns-digitalocean-credentials ~/secrets/digitalocean.ini --dns-digitalocean-propagation-seconds 60"
-            self.run( """echo dns_digitalocean_token ={}>~/secrets/digitalocean.ini""".format(self.digitalocean_api_key))
+            c = "--dns-digitalocean --dns-digitalocean-credentials ~/digitalocean.ini --dns-digitalocean-propagation-seconds 60"
+            self.run( """echo dns_digitalocean_token ={}>~/digitalocean.ini && chmod 600 ~/digitalocean.ini""".format(self.digitalocean_api_key))
 
         output, error, code = self.run("""certbot certonly \
                     --agree-tos \
@@ -84,7 +84,7 @@ class CertbotClient():
         ret_created = True
 
         if self.challenge == 'dns_digitalocean':
-            self.run("""rm ~/secrets/digitalocean.ini""")
+            self.run("""rm ~/digitalocean.ini""")
 
         if b'urn:acme:error:unauthorized' in error:
             logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
