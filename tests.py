@@ -252,12 +252,12 @@ class DFPLEChallengeDNS(DFPLETestCase, Scenario):
         self.dfple_service = self.docker_client.services.create(**dfple_service)
         self.services.append(self.dfple_service)
 
-class DFPLEChallengeDNSHookDO(DFPLETestCase, Scenario):
+class DFPLEChallengeDNSDigitalOcean(DFPLETestCase, Scenario):
 
 
     def setUp(self):
 
-        super(DFPLEChallengeDNSHookDO, self).setUp()
+        super(DFPLEChallengeDNSDigitalOcean, self).setUp()
 
         # docker-flow-proxy-letsencrypt service
         dfple_image = self.docker_client.images.build(
@@ -273,10 +273,8 @@ class DFPLEChallengeDNSHookDO(DFPLETestCase, Scenario):
                 "DF_SWARM_LISTENER_SERVICE_NAME=swarm_listener_{}".format(self.test_name),
                 "CERTBOT_OPTIONS=--staging",
                 "LOG=debug",
-                "CERTBOT_CHALLENGE=dns",
-                "CERTBOT_MANUAL_AUTH_HOOK=/app/hooks/do/manual-auth-hook.sh",
-                "CERTBOT_MANUAL_CLEANUP_HOOK=/app/hooks/do/manual-cleanup-hook.sh",
-                "DO_API_KEY={}".format(os.environ.get('DO_API_KEY')),
+                "CERTBOT_CHALLENGE=dns_digitalocean",
+                "CERTBOT_DIGITALOCEAN_API_KEY={}".format(os.environ.get('CERTBOT_DIGITALOCEAN_API_KEY'),
             ],
             'networks': [self.network_name]
         }
