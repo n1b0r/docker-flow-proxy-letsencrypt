@@ -1,4 +1,5 @@
 import subprocess
+import os.path
 
 import logging
 logger = logging.getLogger('letsencrypt')
@@ -62,9 +63,12 @@ class CertbotClient():
             c = "--manual --manual-public-ip-logging-ok --preferred-challenges dns --manual-auth-hook {} --manual-cleanup-hook {}".format(self.manual_auth_hook, self.manual_cleanup_hook)
 
         if self.challenge == 'dns_digitalocean':
-            c = "--dns-digitalocean --dns-digitalocean-credentials ~/digitalocean.ini --dns-digitalocean-propagation-seconds 60"
-            self.run("""echo dns_digitalocean_token = {token}>~/digitalocean.ini \
-                        && chmod 600 ~/digitalocean.ini""".format(token=self.digitalocean_api_key).split())
+            c = "--dns-digitalocean --dns-digitalocean-credentials /opt/certbot/digitalocean.ini --dns-digitalocean-propagation-seconds 60"
+            if not os.path.isfile('/opt/certbot/digitalocean.ini'):
+                ini = open('/opt/certbot/digitalocean.ini','w')
+                ini.write('dns_digitalocean_token = {}'.format(self.digitalocean_api_key))
+                ini.flush()
+                self.run("""chmod 600 /opt/certbot/digitalocean.ini""".split())
 
         output, error, code = self.run("""certbot certonly \
                     --agree-tos \
@@ -83,9 +87,6 @@ class CertbotClient():
 
         ret_error = False
         ret_created = True
-
-        if self.challenge == 'dns_digitalocean':
-            self.run("""rm ~/digitalocean.ini""")
 
         if b'urn:acme:error:unauthorized' in error:
             logger.error('Error during ACME challenge, is the domain name associated with the right IP ?')
