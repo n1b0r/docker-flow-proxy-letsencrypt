@@ -21,5 +21,17 @@ docker service create --name proxy_proxy-le \
 ```
 
 
+## DigitalOcean DNS
 
+This example uses DigitalOcean certbot DNS [plugin](https://certbot-dns-digitalocean.readthedocs.io/en/stable/).
 
+```
+docker service create --name proxy_proxy-le \
+	--network proxy \
+	-e DF_PROXY_SERVICE_NAME=proxy_proxy \
+	-e CERTBOT_OPTIONS=--staging \
+	-e CERTBOT_CHALLENGE=dns_digitalocean \
+    -e CERTBOT_DIGITALOCEAN_API_KEY=XXXXXX \
+	--mount "type=volume,source=le-certs,destination=/etc/letsencrypt" \
+	nib0r/docker-flow-proxy-letsencrypt
+```

@@ -1,3 +1,4 @@
+#!/usr/local/bin/python
 import datetime
 import docker
 import json
@@ -38,6 +39,7 @@ args = {
     'certbot_options': os.environ.get('CERTBOT_OPTIONS', ''),
     'certbot_manual_auth_hook': os.environ.get('CERTBOT_MANUAL_AUTH_HOOK'),
     'certbot_manual_cleanup_hook': os.environ.get('CERTBOT_MANUAL_CLEANUP_HOOK'),
+    'certbot_digitalocean_api_key': os.environ.get('CERTBOT_DIGITALOCEAN_API_KEY'),
     'docker_client': docker_client,
     'docker_socket_path': docker_socket_path,
     'dfp_service_name': os.environ.get('DF_PROXY_SERVICE_NAME'),
@@ -93,7 +95,7 @@ def reconfigure(version):
                 '&'.join(['{}={}'.format(k, v) for k, v in request.args.items()]))))
             if response.status_code == 200:
                 break
-        except Exception, e:
+        except Exception as e:
             logger.error('Error while trying to forward request: {}'.format(e))
         logger.debug('waiting for retry')
         time.sleep(os.environ.get('RETRY_INTERVAL', 5))
