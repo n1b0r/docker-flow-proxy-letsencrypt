@@ -274,7 +274,7 @@ class DFPLEChallengeDNSDigitalOcean(DFPLETestCase, Scenario):
                 "CERTBOT_OPTIONS=--staging",
                 "LOG=debug",
                 "CERTBOT_CHALLENGE=dns_digitalocean",
-                "CERTBOT_DIGITALOCEAN_API_KEY={}".format(os.environ.get('CERTBOT_DIGITALOCEAN_API_KEY'),
+                "CERTBOT_DIGITALOCEAN_CREDENTIALS={}".format(os.environ.get('CERTBOT_DIGITALOCEAN_CREDENTIALS'),
             ],
             'networks': [self.network_name]
         }

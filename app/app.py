@@ -39,7 +39,7 @@ args = {
     'certbot_options': os.environ.get('CERTBOT_OPTIONS', ''),
     'certbot_manual_auth_hook': os.environ.get('CERTBOT_MANUAL_AUTH_HOOK'),
     'certbot_manual_cleanup_hook': os.environ.get('CERTBOT_MANUAL_CLEANUP_HOOK'),
-    'certbot_digitalocean_api_key': os.environ.get('CERTBOT_DIGITALOCEAN_API_KEY'),
+    'certbot_digitalocean_credentials': os.environ.get('CERTBOT_DIGITALOCEAN_CREDENTIALS'),
     'docker_client': docker_client,
     'docker_socket_path': docker_socket_path,
     'dfp_service_name': os.environ.get('DF_PROXY_SERVICE_NAME'),

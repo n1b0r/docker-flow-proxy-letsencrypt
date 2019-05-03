@@ -30,7 +30,7 @@ class DFPLEClient():
             options=kwargs.get('certbot_options', ''),
             manual_auth_hook=kwargs.get('certbot_manual_auth_hook'),
             manual_cleanup_hook=kwargs.get('certbot_manual_cleanup_hook'),
-            digitalocean_api_key=kwargs.get('certbot_digitalocean_api_key')
+            digitalocean_credentials=kwargs.get('certbot_digitalocean_credentials')
             )
         self.certbot_folder = kwargs.get('certbot_path')
 

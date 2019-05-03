@@ -11,7 +11,7 @@ class CertbotClient():
         self.webroot_path = kwargs.get('webroot_path')
         self.manual_auth_hook = kwargs.get('manual_auth_hook')
         self.manual_cleanup_hook = kwargs.get('manual_cleanup_hook')
-        self.digitalocean_api_key = kwargs.get('digitalocean_api_key')
+        self.digitalocean_credentials = kwargs.get('digitalocean_credentials')
         self.options = kwargs.get('options', "")
 
         if self.challenge not in ("http", "dns", "dns_digitalocean"):
@@ -20,8 +20,8 @@ class CertbotClient():
             raise Exception('required argument "webroot_path" not set. Required when using challenge "http"')
         if self.challenge == "dns" and (self.manual_auth_hook is None or self.manual_cleanup_hook is None):
             raise Exception('required argument "manual_auth_hook" or "manual_manual_hook" not set. Required when using challenge "dns"')
-        if self.challenge == "dns_digitalocean" and self.digitalocean_api_key is None:
-            raise Exception('required argument "digitalocean_api_key" not set. Required when using challenge "dns_digitalocean"')
+        if self.challenge == "dns_digitalocean" and self.digitalocean_credentials is None:
+            raise Exception('required argument "digitalocean_credentials" not set. Required when using challenge "dns_digitalocean"')
 
 
     def run(self, cmd):
@@ -63,12 +63,7 @@ class CertbotClient():
             c = "--manual --manual-public-ip-logging-ok --preferred-challenges dns --manual-auth-hook {} --manual-cleanup-hook {}".format(self.manual_auth_hook, self.manual_cleanup_hook)
 
         if self.challenge == 'dns_digitalocean':
-            c = "--dns-digitalocean --dns-digitalocean-credentials /opt/certbot/digitalocean.ini --dns-digitalocean-propagation-seconds 60"
-            if not os.path.isfile('/opt/certbot/digitalocean.ini'):
-                ini = open('/opt/certbot/digitalocean.ini','w')
-                ini.write('dns_digitalocean_token = {}'.format(self.digitalocean_api_key))
-                ini.flush()
-                self.run("""chmod 600 /opt/certbot/digitalocean.ini""".split())
+            c = "--dns-digitalocean --dns-digitalocean-credentials {} --dns-digitalocean-propagation-seconds 60".format(self.digitalocean_credentials)
 
         output, error, code = self.run("""certbot certonly \
                     --agree-tos \
