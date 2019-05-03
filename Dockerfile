@@ -1,4 +1,3 @@
-#FROM certbot/certbot:v0.33.1
 FROM certbot/dns-digitalocean:v0.31.0
 
 ENV DOCKER_SOCKET_PATH="/var/run/docker.sock" \

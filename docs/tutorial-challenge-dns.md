@@ -4,20 +4,20 @@ Please check the certbot [documentation related to manual scripts](https://certb
 
 In this example we are using the OVH hooks. You could also provide your own manual scripts.
 
-```
+```bash
 docker service create --name proxy_proxy-le \
-	--network proxy \
-	-e DF_PROXY_SERVICE_NAME=proxy_proxy \
-	-e CERTBOT_OPTIONS=--staging \
-	-e CERTBOT_CHALLENGE=dns \
+    --network proxy \
+    -e DF_PROXY_SERVICE_NAME=proxy_proxy \
+    -e CERTBOT_OPTIONS=--staging \
+    -e CERTBOT_CHALLENGE=dns \
     -e CERTBOT_MANUAL_AUTH_HOOK=/app/hooks/ovh/manual-auth-hook.sh \
     -e CERTBOT_MANUAL_CLEANUP_HOOK=/app/hooks/ovh/manual-cleanup-hook.sh \
     -e OVH_DNS_ZONE=XXXXXX \
     -e OVH_APPLICATION_KEY=XXXXXX \
     -e OVH_APPLICATION_SECRET=XXXXXX \
     -e OVH_CONSUMER_KEY=XXXXXX \
-	--mount "type=volume,source=le-certs,destination=/etc/letsencrypt" \
-	nib0r/docker-flow-proxy-letsencrypt
+    --mount "type=volume,source=le-certs,destination=/etc/letsencrypt" \
+    nib0r/docker-flow-proxy-letsencrypt
 ```
 
 
@@ -25,13 +25,14 @@ docker service create --name proxy_proxy-le \
 
 This example uses DigitalOcean certbot DNS [plugin](https://certbot-dns-digitalocean.readthedocs.io/en/stable/).
 
-```
+```bash
 docker service create --name proxy_proxy-le \
-	--network proxy \
-	-e DF_PROXY_SERVICE_NAME=proxy_proxy \
-	-e CERTBOT_OPTIONS=--staging \
-	-e CERTBOT_CHALLENGE=dns_digitalocean \
+    --network proxy \
+    -e DF_PROXY_SERVICE_NAME=proxy_proxy \
+    -e CERTBOT_OPTIONS=--staging \
+    -e CERTBOT_CHALLENGE=dns_digitalocean \
     -e CERTBOT_DIGITALOCEAN_CREDENTIALS=/run/secrets/digitalocean.ini \
-	--mount "type=volume,source=le-certs,destination=/etc/letsencrypt" \
-	nib0r/docker-flow-proxy-letsencrypt
+    --secret digitalocean.ini \
+    --mount "type=volume,source=le-certs,destination=/etc/letsencrypt" \
+    nib0r/docker-flow-proxy-letsencrypt
 ```
