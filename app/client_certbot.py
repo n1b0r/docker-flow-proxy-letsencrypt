@@ -63,7 +63,8 @@ class CertbotClient():
 
         if self.challenge == 'dns_digitalocean':
             c = "--dns-digitalocean --dns-digitalocean-credentials ~/digitalocean.ini --dns-digitalocean-propagation-seconds 60"
-            self.run( """echo dns_digitalocean_token ={}>~/digitalocean.ini && chmod 600 ~/digitalocean.ini""".format(self.digitalocean_api_key))
+            self.run("""echo dns_digitalocean_token = {token}>~/digitalocean.ini \
+                        && chmod 600 ~/digitalocean.ini""".format(token=self.digitalocean_api_key).split())
 
         output, error, code = self.run("""certbot certonly \
                     --agree-tos \
