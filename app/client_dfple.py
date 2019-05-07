@@ -140,6 +140,10 @@ class DFPLEClient():
             # if multiple domains comma separated, take only the first one
             base_domain = domains[0]
 
+            # wildcard domains are stored with domain name
+            if base_domain.startswith( '*.' ):
+                base_domain = base_domain[2:]
+
             # generate combined certificate needed for haproxy
             combined_path = os.path.join(self.certbot_folder, 'live', base_domain, "combined.pem")
             with open(combined_path, "w") as combined, \
