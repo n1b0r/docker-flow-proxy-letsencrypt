@@ -84,7 +84,7 @@ class DFPLETestCase(TestCase):
     def get_conf(self):
         try:
             return requests.get('http://{}:8080/v1/docker-flow-proxy/config'.format(self.base_domain), timeout=3).text
-        except Exception, e:
+        except Exception as e:
             print('Error while getting config on {}: {}'.format(self.base_domain, e))
             return False
 
