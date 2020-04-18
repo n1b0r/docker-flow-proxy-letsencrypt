@@ -84,7 +84,7 @@ def reconfigure(version):
     # sometimes we can get an error back from DFP, this can happen when DFP is not fully loaded.
     # resend the request until response status code is 200 (${RETRY} times waiting ${RETRY_INTERVAL} seconds between retries)
     t = 0
-    while t < os.environ.get('RETRY', 10):
+    while t < int(os.environ.get('RETRY', 10)):
         t += 1
 
         logger.debug('forwarding request to docker-flow-proxy ({})'.format(t))
@@ -96,7 +96,7 @@ def reconfigure(version):
         except Exception, e:
             logger.error('Error while trying to forward request: {}'.format(e))
         logger.debug('waiting for retry')
-        time.sleep(os.environ.get('RETRY_INTERVAL', 5))
+        time.sleep(int(os.environ.get('RETRY_INTERVAL', 5)))
 
     return "OK"
 
