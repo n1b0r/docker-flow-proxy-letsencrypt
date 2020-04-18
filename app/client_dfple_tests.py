@@ -292,5 +292,5 @@ class SecretsTestCase(DFPLEClientTestCase):
 			# check secrets found and attached
 			for d in self.domains:
 				self.assertTrue(any([d in x.name for x in self.client._secrets]))
-				print('ee', self.client.dfp_secrets)
+				print(('ee', self.client.dfp_secrets))
 				self.assertTrue(any(['{}.pem'.format(d) == x['SecretName'] for x in self.client.dfp_secrets]))

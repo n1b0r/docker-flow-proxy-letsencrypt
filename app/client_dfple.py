@@ -176,7 +176,7 @@ class DFPLEClient():
             self.dfp = self.services(self.dfp_service_name)[0]
             self.dfp_secrets = self.service_get_secrets(self.dfp)
 
-        for domain, certs in certs.items():
+        for domain, certs in list(certs.items()):
 
             combined = [x for x in certs if '.pem' in x]
             if len(combined) == 0:

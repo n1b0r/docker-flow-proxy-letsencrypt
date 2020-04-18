@@ -22,13 +22,13 @@ client = ovh.Client(
 # update the _acme-challenge. subdomain with a TXT record
 subdomain = '_acme-challenge.{}'.format(CERTBOT_DOMAIN.replace(OVH_DNS_ZONE, ''))[:-1]
 zones = client.get('/domain/zone/{}/record'.format(OVH_DNS_ZONE), fieldType='TXT', subDomain=subdomain)
-print "zones", zones
+print("zones", zones)
 if len(zones) == 1:
 	zone = zones[0]
 else:
 	raise Exception('Could not find domain matching: {}'.format(CERTBOT_DOMAIN))
 response = client.delete('/domain/zone/{}/record/{}'.format(OVH_DNS_ZONE, zone))
-print "Record deleted : {}".format(response)
+print("Record deleted : {}".format(response))
 
 response = client.post('/domain/zone/{}/refresh'.format(OVH_DNS_ZONE))
-print "Zone refreshed : {}".format(response)
+print("Zone refreshed : {}".format(response))
