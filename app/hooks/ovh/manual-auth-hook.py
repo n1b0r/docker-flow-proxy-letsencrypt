@@ -23,10 +23,10 @@ client = ovh.Client(
 # update the _acme-challenge. subdomain with a TXT record
 subdomain = '_acme-challenge.{}'.format(CERTBOT_DOMAIN.replace(OVH_DNS_ZONE, ''))[:-1]
 zone = client.post('/domain/zone/{}/record'.format(OVH_DNS_ZONE), fieldType='TXT', subDomain=subdomain, target=CERTBOT_VALIDATION)
-print "Record updated : {}".format(zone)
+print("Record updated : {}".format(zone))
 
 response = client.post('/domain/zone/{}/refresh'.format(OVH_DNS_ZONE))
-print "Zone refreshed : {}".format(response)
+print("Zone refreshed : {}".format(response))
 
 # sleep to make sure the change has time to propagate over to DNS
 time.sleep(60)

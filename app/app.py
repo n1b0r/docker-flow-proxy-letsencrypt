@@ -69,13 +69,13 @@ def reconfigure(version):
         #   * com.df.letsencrypt.host
         #   * com.df.letsencrypt.email
         required_labels = ('letsencrypt.host', 'letsencrypt.email')
-        if all([label in args.keys() for label in required_labels]):
+        if all([label in list(args.keys()) for label in required_labels]):
             logger.info('letsencrypt support enabled.')
 
             testing = None
             if 'letsencrypt.testing' in args:
                 testing = args['letsencrypt.testing']
-                if isinstance(testing, basestring):
+                if isinstance(testing, str):
                     testing = True if testing.lower() == 'true' else False
 
             client.process(args['letsencrypt.host'].split(','), args['letsencrypt.email'], testing=testing)
@@ -90,10 +90,10 @@ def reconfigure(version):
         logger.debug('forwarding request to docker-flow-proxy ({})'.format(t))
         try:
             response = dfp_client.get(dfp_client.url(version, '/reconfigure?{}'.format(
-                '&'.join(['{}={}'.format(k, v) for k, v in request.args.items()]))))
+                '&'.join(['{}={}'.format(k, v) for k, v in list(request.args.items())]))))
             if response.status_code == 200:
                 break
-        except Exception, e:
+        except Exception as e:
             logger.error('Error while trying to forward request: {}'.format(e))
         logger.debug('waiting for retry')
         time.sleep(os.environ.get('RETRY_INTERVAL', 5))
